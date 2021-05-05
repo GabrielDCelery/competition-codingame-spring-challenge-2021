@@ -1,0 +1,9 @@
+  
+/dist
+/node_modules
+/config
+/scripts
+/cdk-out
+/temp
+*.js
+/.cache
