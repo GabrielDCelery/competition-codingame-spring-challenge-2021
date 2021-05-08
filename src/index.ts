@@ -1,6 +1,11 @@
-import { GameState } from './entities';
-import { GameConfigs } from './game-configs';
-import { PlayerAgent } from './ai';
+import {
+    createEmptyGameState,
+    setCellRichnessFromGameInput,
+    setGameStats,
+    resetGameStateForTurn,
+    setTreeFromGameInput,
+} from './game-state';
+import { getNextCommandAsGameInput } from './player-agent';
 
 declare const readline: any;
 
@@ -8,18 +13,17 @@ const readNextLine = (): string => readline();
 
 const numOfCells = parseInt(readNextLine()); // 37
 
-const gameConfigs = new GameConfigs();
-const gameState = new GameState({ numOfCells });
+const gameState = createEmptyGameState(numOfCells);
 
 for (let i = 0; i < numOfCells; i++) {
     const inputs = readNextLine().split(' ');
     const cellID = parseInt(inputs[0]); // 0 is the center cell, the next cells spiral outwards
     const richness = parseInt(inputs[1]); // 0 if the cell is unusable, 1-3 for usable cells
-    gameState.setCellRichnessFromGameInput({ cellID, richness });
+    setCellRichnessFromGameInput({ gameState, cellID, richness });
 }
 
 while (true) {
-    gameState.resetGameStats().resetGameMap();
+    resetGameStateForTurn({ gameState });
 
     const day = parseInt(readNextLine()); // the game lasts 24 days: 0-23
     const nutrients = parseInt(readNextLine()); // the base score you gain from the next COMPLETE action
@@ -31,7 +35,8 @@ while (true) {
     const oppScore = parseInt(oppInputs[1]); // opponent's score
     const oppIsWaiting = oppInputs[2] !== '0'; // whether your opponent is asleep until the next day
 
-    gameState.setGameStats({
+    setGameStats({
+        gameState,
         day,
         nutrients,
         mySun,
@@ -49,7 +54,7 @@ while (true) {
         const size = parseInt(treeInputs[1]); // size of this tree: 0-3
         const isMine = treeInputs[2] !== '0'; // 1 if this is your tree
         const isDormant = treeInputs[3] !== '0'; // 1 if this tree is dormant
-        gameState.setTreeFromGameInput({ cellID, size, isMine, isDormant });
+        setTreeFromGameInput({ gameState, cellID, size, isMine, isDormant });
     }
 
     const numberOfPossibleMoves = parseInt(readNextLine());
@@ -61,11 +66,6 @@ while (true) {
         possibleMoves.push(possibleMove);
     }
 
-    // Write an action using console.log()
-    // To debug: console.error('Debug messages...');
-
-    // GROW cellIdx | SEED sourceIdx targetIdx | COMPLETE cellIdx | WAIT <message>
-
-    const command = new PlayerAgent({ gameState, gameConfigs }).getNextCommandAsGameInput({ possibleMoves });
+    const command = getNextCommandAsGameInput(gameState, possibleMoves);
     console.log(command);
 }

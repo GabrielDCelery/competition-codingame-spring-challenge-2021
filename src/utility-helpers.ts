@@ -92,3 +92,18 @@ export const normalizedLogisticDecay = ({ value, max, a = 1 }: { value: number; 
     // eslint-disable-next-line unicorn/prefer-exponentiation-operator
     return 1 / (1 + Math.pow(Math.E, -1 * a * (4 * Math.E * x - 2 * Math.E)));
 };
+
+export const normalizeValueBetweenZeroAndOne = ({
+    min,
+    max,
+    value,
+}: {
+    min: number;
+    max: number;
+    value: number;
+}): number => {
+    if (max - min === 0) {
+        return 0;
+    }
+    return (value - min) / (max - min);
+};
