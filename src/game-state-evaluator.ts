@@ -2,7 +2,7 @@ import { GameState, getNumOfCellsInfluenced, getTreeShadowModifiersForWeek } fro
 import { normalizeValueBetweenZeroAndOne } from './utility-helpers';
 
 export type GameStateEvaluation = {
-    myScoreAcquired: number;
+    myTotalScore: number;
     mySunStored: number;
     myAverageSunProductionPerDay: number;
     myInfluence: number;
@@ -10,9 +10,18 @@ export type GameStateEvaluation = {
     opponentAverageSunProductionPerDay: number;
 };
 
+export type NormalizedGameStateEvaluation = {
+    myNormalizedTotalScore: number;
+    myNormalizedSunStored: number;
+    myNormalizedAverageSunProductionPerDay: number;
+    myNormalizedInfluence: number;
+    myNormalizedTotalTreeSize: number;
+    opponentNormalizedAverageSunProductionPerDay: number;
+};
+
 export const evaluateGameState = (gameState: GameState): GameStateEvaluation => {
     const gameStateEvaluation: GameStateEvaluation = {
-        myScoreAcquired: 0,
+        myTotalScore: 0,
         mySunStored: 0,
         myAverageSunProductionPerDay: 0,
         myInfluence: 0,
@@ -37,14 +46,16 @@ export const evaluateGameState = (gameState: GameState): GameStateEvaluation => 
 
     gameStateEvaluation.myInfluence = getNumOfCellsInfluenced(gameState);
     gameStateEvaluation.mySunStored = gameState.players.me.sun;
-    gameStateEvaluation.myScoreAcquired = gameState.players.me.score;
+    gameStateEvaluation.myTotalScore = gameState.players.me.score;
 
     return gameStateEvaluation;
 };
 
-export const normalizeGameStateEvaluations = (gameStateEvaluations: GameStateEvaluation[]): GameStateEvaluation[] => {
+export const normalizeGameStateEvaluations = (
+    gameStateEvaluations: GameStateEvaluation[]
+): NormalizedGameStateEvaluation[] => {
     const min = {
-        myScoreAcquired: Infinity,
+        myTotalScore: Infinity,
         mySunStored: Infinity,
         myAverageSunProductionPerDay: Infinity,
         myInfluence: Infinity,
@@ -53,7 +64,7 @@ export const normalizeGameStateEvaluations = (gameStateEvaluations: GameStateEva
     };
 
     const max = {
-        myScoreAcquired: -Infinity,
+        myTotalScore: -Infinity,
         mySunStored: -Infinity,
         myAverageSunProductionPerDay: -Infinity,
         myInfluence: -Infinity,
@@ -64,15 +75,15 @@ export const normalizeGameStateEvaluations = (gameStateEvaluations: GameStateEva
     gameStateEvaluations.forEach((gameStateEvaluation) => {
         const {
             mySunStored,
-            myScoreAcquired,
+            myTotalScore,
             myAverageSunProductionPerDay,
             myInfluence,
             myTotalTreeSize,
             opponentAverageSunProductionPerDay,
         } = gameStateEvaluation;
 
-        if (myScoreAcquired < min.myScoreAcquired) {
-            min.myScoreAcquired = myScoreAcquired;
+        if (myTotalScore < min.myTotalScore) {
+            min.myTotalScore = myTotalScore;
         }
         if (mySunStored < min.mySunStored) {
             min.mySunStored = mySunStored;
@@ -90,8 +101,8 @@ export const normalizeGameStateEvaluations = (gameStateEvaluations: GameStateEva
             min.myTotalTreeSize = myTotalTreeSize;
         }
 
-        if (max.myScoreAcquired < myScoreAcquired) {
-            max.myScoreAcquired = myScoreAcquired;
+        if (max.myTotalScore < myTotalScore) {
+            max.myTotalScore = myTotalScore;
         }
         if (max.mySunStored < mySunStored) {
             max.mySunStored = mySunStored;
@@ -112,32 +123,32 @@ export const normalizeGameStateEvaluations = (gameStateEvaluations: GameStateEva
 
     return gameStateEvaluations.map((gameStateEvaluation) => {
         return {
-            myScoreAcquired: normalizeValueBetweenZeroAndOne({
-                min: min.myScoreAcquired,
-                max: max.myScoreAcquired,
-                value: gameStateEvaluation.myScoreAcquired,
+            myNormalizedTotalScore: normalizeValueBetweenZeroAndOne({
+                min: min.myTotalScore,
+                max: max.myTotalScore,
+                value: gameStateEvaluation.myTotalScore,
             }),
-            mySunStored: normalizeValueBetweenZeroAndOne({
+            myNormalizedSunStored: normalizeValueBetweenZeroAndOne({
                 min: min.mySunStored,
                 max: max.mySunStored,
                 value: gameStateEvaluation.mySunStored,
             }),
-            myAverageSunProductionPerDay: normalizeValueBetweenZeroAndOne({
+            myNormalizedAverageSunProductionPerDay: normalizeValueBetweenZeroAndOne({
                 min: min.myAverageSunProductionPerDay,
                 max: max.myAverageSunProductionPerDay,
                 value: gameStateEvaluation.myAverageSunProductionPerDay,
             }),
-            myInfluence: normalizeValueBetweenZeroAndOne({
+            myNormalizedInfluence: normalizeValueBetweenZeroAndOne({
                 min: min.myInfluence,
                 max: max.myInfluence,
                 value: gameStateEvaluation.myInfluence,
             }),
-            myTotalTreeSize: normalizeValueBetweenZeroAndOne({
+            myNormalizedTotalTreeSize: normalizeValueBetweenZeroAndOne({
                 min: min.myTotalTreeSize,
                 max: max.myTotalTreeSize,
                 value: gameStateEvaluation.myTotalTreeSize,
             }),
-            opponentAverageSunProductionPerDay: normalizeValueBetweenZeroAndOne({
+            opponentNormalizedAverageSunProductionPerDay: normalizeValueBetweenZeroAndOne({
                 min: min.opponentAverageSunProductionPerDay,
                 max: max.opponentAverageSunProductionPerDay,
                 value: gameStateEvaluation.opponentAverageSunProductionPerDay,

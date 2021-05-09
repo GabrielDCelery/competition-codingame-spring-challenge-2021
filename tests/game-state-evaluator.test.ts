@@ -87,10 +87,12 @@ describe('GameStateEvaluator', () => {
             };
 
             expect(evaluateGameState(gameState)).to.deep.equal({
-                maxNumOfDays: 6,
-                myAverageSunProductionPerDay: 4.666666666666667,
-                numOfDaysLeft: 3,
-                opponentAverageSunProductionPerDay: 4.666666666666667,
+                myAverageSunProductionPerDay: 5.333333333333334,
+                myInfluence: 10,
+                myTotalScore: 0,
+                mySunStored: 0,
+                myTotalTreeSize: 6,
+                opponentAverageSunProductionPerDay: 5.333333333333334,
             });
         });
     });

@@ -53,6 +53,14 @@ export const normalizedLinearDecay = ({ value, max, a = 1 }: { value: number; ma
     return a < 1 ? Math.min(1, x / a) : x / a;
 };
 
+export const normalizedPyramid = ({ value, max }: { value: number; max: number }): number => {
+    const x = value / max;
+    if (x < 0.5) {
+        return x;
+    }
+    return 1 - x;
+};
+
 export const normalizedExponential = ({ value, max, a = 2 }: { value: number; max: number; a?: number }): number => {
     const x = value / max;
 

@@ -2,7 +2,13 @@ import { MAX_NUM_OF_DAYS } from './game-config';
 import { cloneGameState, GameState } from './game-state';
 import { evaluateGameState, normalizeGameStateEvaluations } from './game-state-evaluator';
 import { ActionType, convertGameInputStringToAction, applyActionToGameState } from './player-actions';
-import { average, normalizedExponential, normalizedLinear, normalizedLinearDecay } from './utility-helpers';
+import {
+    average,
+    normalizedExponential,
+    normalizedLinear,
+    normalizedLinearDecay,
+    normalizedPyramid,
+} from './utility-helpers';
 
 export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: string[]): string => {
     const gameStateEvaluations = possibleMoves.map((possibleMove) => {
@@ -20,43 +26,33 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
     const linearRiseWeight = normalizedLinear({ value: currentDay, max: maxNumOfDays });
     const linearDecayWeight = normalizedLinearDecay({ value: currentDay, max: maxNumOfDays });
     // const exponentialRiseWeight3 = normalizedExponential({ value: currentDay, max: maxNumOfDays, a: 3 });
-    const exponentialRiseWeight5 = normalizedExponential({ value: currentDay, max: maxNumOfDays, a: 5 });
-    const logarithmicDecayWeight = 1 - exponentialRiseWeight5;
+    const exponentialRiseWeight = normalizedExponential({ value: currentDay, max: maxNumOfDays, a: 3 });
+    const logarithmicDecayWeight = 1 - exponentialRiseWeight;
+    const pyramidWeight = normalizedPyramid({ value: currentDay, max: maxNumOfDays });
 
     const utilities = normalizedGameStateEvaluations.map((normalizedGameStateEvaluation) => {
         const {
-            myScoreAcquired,
-            mySunStored,
-            myAverageSunProductionPerDay,
-            myInfluence,
-            myTotalTreeSize,
-            opponentAverageSunProductionPerDay,
+            myNormalizedTotalScore,
+            myNormalizedSunStored,
+            myNormalizedAverageSunProductionPerDay,
+            myNormalizedInfluence,
+            myNormalizedTotalTreeSize,
+            opponentNormalizedAverageSunProductionPerDay,
         } = normalizedGameStateEvaluation;
 
-        const myScoreUtility = linearRiseWeight * myScoreAcquired;
-        const mySunStoredUtility = linearDecayWeight * mySunStored;
-        const myProductionUtility = logarithmicDecayWeight * myAverageSunProductionPerDay;
-        const myInfluenceutility = linearDecayWeight * myInfluence;
-        const myTotalTreeSizeUtility = linearDecayWeight * myTotalTreeSize;
-        const hinderOpponentProductionUtility = logarithmicDecayWeight * (1 - opponentAverageSunProductionPerDay);
-        /*
-        if (index === 0 || index === 1) {
-            console.error([
-                myScoreUtility,
-                mySunStoredUtility,
-                myProductionUtility,
-                myInfluenceutility,
-                myTotalTreeSizeUtility,
-                hinderOpponentProductionUtility,
-            ]);
-        }
-        */
+        const myTotalScoreUtility = linearRiseWeight * myNormalizedTotalScore;
+        const mySunStoredUtility = linearDecayWeight * myNormalizedSunStored;
+        const myProductionUtility = logarithmicDecayWeight * myNormalizedAverageSunProductionPerDay;
+        const myInfluenceUtility = pyramidWeight * myNormalizedInfluence;
+        const myTotalTreeSizeUtility = logarithmicDecayWeight * myNormalizedTotalTreeSize;
+        const hinderOpponentProductionUtility =
+            logarithmicDecayWeight * (1 - opponentNormalizedAverageSunProductionPerDay);
 
         return average([
-            myScoreUtility,
+            myTotalScoreUtility,
             mySunStoredUtility,
             myProductionUtility,
-            myInfluenceutility,
+            myInfluenceUtility,
             myTotalTreeSizeUtility,
             hinderOpponentProductionUtility,
         ]);

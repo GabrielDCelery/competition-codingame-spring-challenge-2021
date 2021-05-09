@@ -272,7 +272,7 @@ export const getNumOfCellsInfluenced = (gameState: GameState): number => {
             const influencedKey = hexCoordinatesToKey(influencedCoordinates);
             if (
                 gameState.players.me.trees[influencedKey] ||
-                gameState.players.opponent.trees[influencedKey] ||
+                // gameState.players.opponent.trees[influencedKey] ||
                 influencedCells[influencedKey]
             ) {
                 return;
@@ -283,3 +283,42 @@ export const getNumOfCellsInfluenced = (gameState: GameState): number => {
 
     return Object.keys(influencedCells).length;
 };
+
+/*
+export const getNumOfCellsInfluenced = (gameState: GameState): number => {
+    const influencedCells: { [index: string]: boolean } = {};
+
+    Object.keys(gameState.players.me.trees).forEach((treeKey) => {
+        influencedCells[treeKey] = true;
+        const tree = gameState.players.me.trees[treeKey];
+        if (tree.size === 0) {
+            return;
+        }
+        const treeCoordinates = keyToHexCoordinates(treeKey);
+        [0, 1, 2, 3, 4, 5].forEach((directionID) => {
+            const hexDirection = getHexDirectionByID(directionID);
+            new Array(tree.size)
+                .fill(null)
+                .map((e, i) => i + 1)
+                .forEach((scale) => {
+                    const scaledHexDirection = scaleHexDirection(hexDirection, scale);
+                    const influencedCoordinates = addHexDirection(treeCoordinates, scaledHexDirection);
+                    if (!isValidHexCoordinates(gameState, influencedCoordinates)) {
+                        return;
+                    }
+                    const influencedKey = hexCoordinatesToKey(influencedCoordinates);
+                    if (
+                        gameState.players.me.trees[influencedKey] ||
+                        // gameState.players.opponent.trees[influencedKey] ||
+                        influencedCells[influencedKey]
+                    ) {
+                        return;
+                    }
+                    influencedCells[influencedKey] = true;
+                });
+        });
+    });
+
+    return Object.keys(influencedCells).length;
+};
+*/
