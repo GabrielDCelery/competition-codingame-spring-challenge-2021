@@ -23,7 +23,7 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
 
     const currentDay = gameState.day + 1;
     const maxNumOfDays = MAX_NUM_OF_DAYS;
-    const linearRiseWeight = normalizedLinear({ value: currentDay, max: maxNumOfDays });
+    const linearRiseWeight = normalizedLinear({ value: currentDay, max: maxNumOfDays, a: 0.5 });
     const linearDecayWeight = normalizedLinearDecay({ value: currentDay, max: maxNumOfDays });
     // const exponentialRiseWeight3 = normalizedExponential({ value: currentDay, max: maxNumOfDays, a: 3 });
     const exponentialRiseWeight = normalizedExponential({ value: currentDay, max: maxNumOfDays, a: 3 });
@@ -36,8 +36,10 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
             myNormalizedSunStored,
             myNormalizedAverageSunProductionPerDay,
             myNormalizedInfluence,
+            myNormalizedExpansion,
             myNormalizedTotalTreeSize,
             opponentNormalizedAverageSunProductionPerDay,
+            myNormalizedRelativeScoreAdvantage,
         } = normalizedGameStateEvaluation;
 
         const myTotalScoreUtility = linearRiseWeight * myNormalizedTotalScore;
@@ -45,16 +47,20 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
         const myProductionUtility = logarithmicDecayWeight * myNormalizedAverageSunProductionPerDay;
         const myInfluenceUtility = pyramidWeight * myNormalizedInfluence;
         const myTotalTreeSizeUtility = logarithmicDecayWeight * myNormalizedTotalTreeSize;
+        const myExpansionUtility = logarithmicDecayWeight * myNormalizedExpansion;
         const hinderOpponentProductionUtility =
             logarithmicDecayWeight * (1 - opponentNormalizedAverageSunProductionPerDay);
+        const myRelativeScoreAdvantageUtility = myNormalizedRelativeScoreAdvantage;
 
         return average([
             myTotalScoreUtility,
             mySunStoredUtility,
             myProductionUtility,
-            myInfluenceUtility,
+            //  myInfluenceUtility,
+            myExpansionUtility,
             myTotalTreeSizeUtility,
             hinderOpponentProductionUtility,
+            myRelativeScoreAdvantageUtility,
         ]);
     });
 

@@ -6,7 +6,9 @@ import {
     addHexDirection,
     hexCoordinatesToKey,
     keyToHexCoordinates,
+    hexDistance,
 } from './hex-map-transforms';
+import { average } from './utility-helpers';
 
 type TreeState = {
     size: number;
@@ -257,7 +259,77 @@ export const getNumOfTreesOfSameSize = (gameState: GameState, size: number): num
     return count;
 };
 
-export const getNumOfCellsInfluenced = (gameState: GameState): number => {
+export const getMyExpansionValue = (gameState: GameState): number => {
+    let expansionValue = 0;
+    const myTreeKeys = Object.keys(gameState.players.me.trees);
+    const newlyPlantedTreeKeys = myTreeKeys.filter((treeKey) => {
+        return gameState.players.me.trees[treeKey].size === 0;
+    });
+    // no newly planted tree
+    if (newlyPlantedTreeKeys.length === 0) {
+        return expansionValue;
+    }
+    for (let i = 0, iMax = newlyPlantedTreeKeys.length; i < iMax; i++) {
+        const newlyPlantedTreeKey = newlyPlantedTreeKeys[i];
+        const newlyPlantedTreeCoordinates = keyToHexCoordinates(newlyPlantedTreeKey);
+        const newlyPlantedTreeDistancesFromOtherTrees: number[] = [];
+        for (let k = 0, kMax = myTreeKeys.length; k < kMax; k++) {
+            const myTreeKey = myTreeKeys[k];
+            // not comparing with itself
+            if (myTreeKey == newlyPlantedTreeKey) {
+                continue;
+            }
+            const myTreeCoordinates = keyToHexCoordinates(myTreeKey);
+            const distance = hexDistance(myTreeCoordinates, newlyPlantedTreeCoordinates);
+            // dont want to plant next to my own tree
+            if (distance === 1) {
+                return expansionValue;
+            }
+
+            newlyPlantedTreeDistancesFromOtherTrees.push(distance);
+        }
+        const averageDistanceFromOtherTrees = average(newlyPlantedTreeDistancesFromOtherTrees);
+        const [q, r] = newlyPlantedTreeCoordinates;
+        const richness = gameState.map.richnessMatrix[r][q] || 0;
+        //  expansionValue += averageDistanceFromOtherTrees;
+        expansionValue += richness / 3;
+    }
+    return expansionValue;
+};
+
+export const getMyExpansionValueV2 = (gameState: GameState): number => {
+    const myTreeKeys = Object.keys(gameState.players.me.trees);
+    const newlyPlantedTreeKeys = myTreeKeys.filter((treeKey) => {
+        return gameState.players.me.trees[treeKey].size === 0;
+    });
+    // no newly planted tree
+    if (newlyPlantedTreeKeys.length === 0) {
+        return 0;
+    }
+    let numOfCellsInfluenced = 0;
+    for (let i = 0, iMax = newlyPlantedTreeKeys.length; i < iMax; i++) {
+        const newlyPlantedTreeKey = newlyPlantedTreeKeys[i];
+        const newlyPlantedTreeCoordinates = keyToHexCoordinates(newlyPlantedTreeKey);
+        for (let directionID = 0; directionID < 6; directionID++) {
+            const hexDirection = getHexDirectionByID(directionID);
+            for (let distance = 1; distance <= 3; distance++) {
+                const scaledHexDirection = scaleHexDirection(hexDirection, distance);
+                const influencedCoordinates = addHexDirection(newlyPlantedTreeCoordinates, scaledHexDirection);
+                const influencedCoordinatesKey = hexCoordinatesToKey(influencedCoordinates);
+                if (gameState.players.me.trees[influencedCoordinatesKey]) {
+                    if (distance === 1) {
+                        return 0;
+                    }
+                    break;
+                }
+                numOfCellsInfluenced++;
+            }
+        }
+    }
+    return numOfCellsInfluenced / 18 / newlyPlantedTreeKeys.length;
+};
+
+export const getMyInfluence = (gameState: GameState): number => {
     const influencedCells: { [index: string]: boolean } = {};
 
     Object.keys(gameState.players.me.trees).forEach((treeKey) => {
@@ -282,6 +354,53 @@ export const getNumOfCellsInfluenced = (gameState: GameState): number => {
     });
 
     return Object.keys(influencedCells).length;
+};
+
+const INFLUENCE_BASE_VALUE = 1;
+const INFLUENCE_RADIUS_WEIGHTS = [1, 0.75, 0.5, 0.25];
+
+export const getMyInfluenceV2 = (gameState: GameState): number => {
+    const influencedCells: { [index: string]: number } = {};
+    const myTreeKeys = Object.keys(gameState.players.me.trees);
+
+    myTreeKeys.forEach((treeKey) => {
+        influencedCells[treeKey] = INFLUENCE_BASE_VALUE * INFLUENCE_RADIUS_WEIGHTS[0];
+    });
+
+    myTreeKeys.forEach((treeKey) => {
+        const tree = gameState.players.me.trees[treeKey];
+        if (tree.size === 0) {
+            return;
+        }
+        const treeCoordinates = keyToHexCoordinates(treeKey);
+        let pointerCoordinates: HexCoordinates = [...treeCoordinates];
+
+        for (let radius = 1; radius <= tree.size; radius++) {
+            const influenceValue = INFLUENCE_BASE_VALUE * INFLUENCE_RADIUS_WEIGHTS[radius];
+            const hexDirection = getHexDirectionByID(0);
+            const scaledHexDirection = scaleHexDirection(hexDirection, radius);
+            pointerCoordinates = addHexDirection(treeCoordinates, scaledHexDirection);
+            [2, 3, 4, 5, 0, 1].forEach((diretionID) => {
+                for (let step = 1; step <= radius; step++) {
+                    if (isValidHexCoordinates(gameState, pointerCoordinates)) {
+                        const pointerKey = hexCoordinatesToKey(pointerCoordinates);
+                        influencedCells[pointerKey] =
+                            influenceValue > influencedCells[pointerKey]
+                                ? influenceValue
+                                : influencedCells[pointerKey] || 0;
+                    }
+                    const hexDirection = getHexDirectionByID(diretionID);
+                    pointerCoordinates = addHexDirection(pointerCoordinates, hexDirection);
+                }
+            });
+        }
+    });
+    let sum = 0;
+    const inflencedCellKeys = Object.keys(influencedCells);
+    inflencedCellKeys.forEach((key) => {
+        sum += influencedCells[key];
+    });
+    return sum / inflencedCellKeys.length;
 };
 
 /*

@@ -58,3 +58,7 @@ export const keyToHexCoordinates = (key: string): HexCoordinates => {
     const [q, r] = key.split('_').map((elem) => parseInt(elem, 10));
     return [q, r];
 };
+
+export const hexDistance = (a: HexCoordinates, b: HexCoordinates): number => {
+    return (Math.abs(a[0] - b[0]) + Math.abs(a[0] + a[1] - b[0] - b[1]) + Math.abs(a[1] - b[1])) / 2;
+};

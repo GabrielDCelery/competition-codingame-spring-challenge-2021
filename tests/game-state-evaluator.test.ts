@@ -93,6 +93,8 @@ describe('GameStateEvaluator', () => {
                 mySunStored: 0,
                 myTotalTreeSize: 6,
                 opponentAverageSunProductionPerDay: 5.333333333333334,
+                myProjectedFinalScore: 39.111111111111114,
+                opponentProjectedFinalScore: 0,
             });
         });
     });

@@ -1,4 +1,5 @@
-import { GameState, getNumOfCellsInfluenced, getTreeShadowModifiersForWeek } from './game-state';
+import { MAX_NUM_OF_DAYS } from './game-config';
+import { GameState, getMyExpansionValue, getMyInfluence, getTreeShadowModifiersForWeek } from './game-state';
 import { normalizeValueBetweenZeroAndOne } from './utility-helpers';
 
 export type GameStateEvaluation = {
@@ -6,8 +7,11 @@ export type GameStateEvaluation = {
     mySunStored: number;
     myAverageSunProductionPerDay: number;
     myInfluence: number;
+    myExpansion: number;
     myTotalTreeSize: number;
     opponentAverageSunProductionPerDay: number;
+    myProjectedFinalScore: number;
+    opponentProjectedFinalScore: number;
 };
 
 export type NormalizedGameStateEvaluation = {
@@ -15,8 +19,10 @@ export type NormalizedGameStateEvaluation = {
     myNormalizedSunStored: number;
     myNormalizedAverageSunProductionPerDay: number;
     myNormalizedInfluence: number;
+    myNormalizedExpansion: number;
     myNormalizedTotalTreeSize: number;
     opponentNormalizedAverageSunProductionPerDay: number;
+    myNormalizedRelativeScoreAdvantage: number;
 };
 
 export const evaluateGameState = (gameState: GameState): GameStateEvaluation => {
@@ -25,8 +31,11 @@ export const evaluateGameState = (gameState: GameState): GameStateEvaluation => 
         mySunStored: 0,
         myAverageSunProductionPerDay: 0,
         myInfluence: 0,
+        myExpansion: 0,
         myTotalTreeSize: 0,
         opponentAverageSunProductionPerDay: 0,
+        myProjectedFinalScore: 0,
+        opponentProjectedFinalScore: 0,
     };
 
     const treeShadowModifiers = getTreeShadowModifiersForWeek(gameState);
@@ -44,9 +53,20 @@ export const evaluateGameState = (gameState: GameState): GameStateEvaluation => 
         gameStateEvaluation.opponentAverageSunProductionPerDay += tree.size * productionWeight;
     });
 
-    gameStateEvaluation.myInfluence = getNumOfCellsInfluenced(gameState);
+    gameStateEvaluation.myInfluence = getMyInfluence(gameState);
     gameStateEvaluation.mySunStored = gameState.players.me.sun;
     gameStateEvaluation.myTotalScore = gameState.players.me.score;
+    gameStateEvaluation.myExpansion = getMyExpansionValue(gameState);
+
+    const daysLeft = MAX_NUM_OF_DAYS - gameState.day;
+
+    gameStateEvaluation.myProjectedFinalScore =
+        gameState.players.me.score +
+        (gameState.players.me.sun + gameStateEvaluation.myAverageSunProductionPerDay * daysLeft) / 3;
+
+    gameStateEvaluation.opponentProjectedFinalScore =
+        gameState.players.opponent.score +
+        (gameState.players.opponent.sun + gameStateEvaluation.opponentProjectedFinalScore * daysLeft) / 3;
 
     return gameStateEvaluation;
 };
@@ -59,8 +79,10 @@ export const normalizeGameStateEvaluations = (
         mySunStored: Infinity,
         myAverageSunProductionPerDay: Infinity,
         myInfluence: Infinity,
+        myExpansion: Infinity,
         myTotalTreeSize: Infinity,
         opponentAverageSunProductionPerDay: Infinity,
+        myOpponentTotalScore: Infinity,
     };
 
     const max = {
@@ -68,8 +90,10 @@ export const normalizeGameStateEvaluations = (
         mySunStored: -Infinity,
         myAverageSunProductionPerDay: -Infinity,
         myInfluence: -Infinity,
+        myExpansion: -Infinity,
         myTotalTreeSize: -Infinity,
         opponentAverageSunProductionPerDay: -Infinity,
+        myOpponentTotalScore: -Infinity,
     };
 
     gameStateEvaluations.forEach((gameStateEvaluation) => {
@@ -78,6 +102,7 @@ export const normalizeGameStateEvaluations = (
             myTotalScore,
             myAverageSunProductionPerDay,
             myInfluence,
+            myExpansion,
             myTotalTreeSize,
             opponentAverageSunProductionPerDay,
         } = gameStateEvaluation;
@@ -100,6 +125,9 @@ export const normalizeGameStateEvaluations = (
         if (myTotalTreeSize < min.myTotalTreeSize) {
             min.myTotalTreeSize = myTotalTreeSize;
         }
+        if (myExpansion < min.myExpansion) {
+            min.myExpansion = myExpansion;
+        }
 
         if (max.myTotalScore < myTotalScore) {
             max.myTotalScore = myTotalScore;
@@ -119,9 +147,15 @@ export const normalizeGameStateEvaluations = (
         if (max.myTotalTreeSize < myTotalTreeSize) {
             max.myTotalTreeSize = myTotalTreeSize;
         }
+        if (max.myExpansion < myExpansion) {
+            max.myExpansion = myExpansion;
+        }
     });
 
     return gameStateEvaluations.map((gameStateEvaluation) => {
+        const totalProjectedScoreBetweenPlayers =
+            gameStateEvaluation.myProjectedFinalScore + gameStateEvaluation.opponentProjectedFinalScore;
+
         return {
             myNormalizedTotalScore: normalizeValueBetweenZeroAndOne({
                 min: min.myTotalScore,
@@ -153,6 +187,15 @@ export const normalizeGameStateEvaluations = (
                 max: max.opponentAverageSunProductionPerDay,
                 value: gameStateEvaluation.opponentAverageSunProductionPerDay,
             }),
+            myNormalizedExpansion: normalizeValueBetweenZeroAndOne({
+                min: min.myExpansion,
+                max: max.myExpansion,
+                value: gameStateEvaluation.myExpansion,
+            }),
+            myNormalizedRelativeScoreAdvantage:
+                totalProjectedScoreBetweenPlayers === 0
+                    ? 0.5
+                    : gameStateEvaluation.myProjectedFinalScore / totalProjectedScoreBetweenPlayers,
         };
     });
 };
