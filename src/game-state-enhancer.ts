@@ -149,7 +149,7 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
         gameState.players.me.score +
         (enhancedGameState.enhancements.players.me.averageSunProductionPerDay * daysLeft) / 3;
 
-    let currentNutrientsModifier = gameState.nutrients - 20;
+    let currentNutrientsModifier = 0;
 
     myTreeKeys.forEach((treeKey) => {
         const tree = gameState.players.me.trees[treeKey];
@@ -168,7 +168,7 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
         gameState.players.opponent.score +
         (enhancedGameState.enhancements.players.opponent.averageSunProductionPerDay * daysLeft) / 3;
 
-    currentNutrientsModifier = gameState.nutrients - 20;
+    currentNutrientsModifier = 0;
 
     opponentTreeKeys.forEach((treeKey) => {
         const tree = gameState.players.opponent.trees[treeKey];
