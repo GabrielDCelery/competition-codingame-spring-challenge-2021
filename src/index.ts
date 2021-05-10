@@ -5,7 +5,7 @@ import {
     resetGameStateForTurn,
     setTreeFromGameInput,
 } from './game-state';
-import { getNextCommandAsGameInput } from './player-agent';
+import { getNextCommandAsGameInput } from './player-ai';
 
 declare const readline: any;
 

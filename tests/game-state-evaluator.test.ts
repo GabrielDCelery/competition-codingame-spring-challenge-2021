@@ -89,6 +89,7 @@ describe('GameStateEvaluator', () => {
             expect(evaluateGameState(gameState)).to.deep.equal({
                 myAverageSunProductionPerDay: 5.333333333333334,
                 myInfluence: 10,
+                myExpansion: 0,
                 myTotalScore: 0,
                 mySunStored: 0,
                 myTotalTreeSize: 6,

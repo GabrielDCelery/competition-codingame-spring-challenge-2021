@@ -49,6 +49,7 @@ export const applyGrowActionToGameState = (gameState: GameState, sourceCellID: n
     const numOfTreesOfSameSize = getNumOfTreesOfSameSize(gameState, targetSize);
     const growCost = getTreeGrowCost({ targetSize, numOfTreesOfSameSize });
     gameState.players.me.trees[treeKey].size = targetSize;
+    gameState.players.me.trees[treeKey].isDormant = true;
     gameState.players.me.sun -= growCost;
     return gameState;
 };
@@ -59,15 +60,18 @@ export const applySeedActionToGameState = (
     targetCellID: number
 ): GameState => {
     gameState.day += 1;
-    const seedCoordinates = gameState.map.cellIndexToHexCoordinates[targetCellID];
-    const treeKey = hexCoordinatesToKey(seedCoordinates);
+    const sourceTreeCoordinates = gameState.map.cellIndexToHexCoordinates[sourceCellID];
+    const targetCoordinates = gameState.map.cellIndexToHexCoordinates[targetCellID];
+    const sourceTreeKey = hexCoordinatesToKey(sourceTreeCoordinates);
+    const targetTreeKey = hexCoordinatesToKey(targetCoordinates);
     const seededTreeSize = 0;
     const numOfTreesOfSameSize = getNumOfTreesOfSameSize(gameState, seededTreeSize);
-    const seedCost = getSeedCost({ numOfTreesOfSameSize });
-    gameState.players.me.trees[treeKey] = {
+    const seedCost = getSeedCost(numOfTreesOfSameSize);
+    gameState.players.me.trees[targetTreeKey] = {
         size: seededTreeSize,
-        isDormant: false,
+        isDormant: true,
     };
+    gameState.players.me.trees[sourceTreeKey].isDormant = true;
     gameState.players.me.sun -= seedCost;
     return gameState;
 };

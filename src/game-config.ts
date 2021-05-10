@@ -12,7 +12,7 @@ export const getNumOfDaysLeft = (days: number): number => {
     return MAX_NUM_OF_DAYS - days;
 };
 
-export const getSeedCost = ({ numOfTreesOfSameSize }: { numOfTreesOfSameSize: number }): number => {
+export const getSeedCost = (numOfTreesOfSameSize: number): number => {
     return numOfTreesOfSameSize;
 };
 

@@ -6,7 +6,7 @@ import {
     setGameStats,
     setTreeFromGameInput,
 } from '../src/game-state';
-import { getNextCommandAsGameInput } from '../src/player-agent';
+import { getNextCommandAsGameInput } from '../src/player-ai';
 
 describe('Custom', () => {
     it('does something', () => {
