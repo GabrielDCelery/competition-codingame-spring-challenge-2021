@@ -66,6 +66,8 @@ type PlayerGameStateEnhancement = {
     averageSunProductionPerDay: number;
     projectedAverageSunProductionPerDay: number;
     projectedFinalScore: number;
+    influence: number;
+    numOfDormantTrees: number;
 };
 
 type GameStateEnhancement = {
@@ -89,12 +91,16 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
                     averageSunProductionPerDay: 0,
                     projectedAverageSunProductionPerDay: 0,
                     projectedFinalScore: 0,
+                    influence: 0,
+                    numOfDormantTrees: 0,
                 },
                 opponent: {
                     totalTreeSize: 0,
                     averageSunProductionPerDay: 0,
                     projectedAverageSunProductionPerDay: 0,
                     projectedFinalScore: 0,
+                    influence: 0,
+                    numOfDormantTrees: 0,
                 },
             },
         },
@@ -115,6 +121,10 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
         enhancedGameState.enhancements.players.me.projectedAverageSunProductionPerDay += 3 * projectedProductionWeight;
 
         enhancedGameState.enhancements.players.me.totalTreeSize += tree.size;
+
+        if (tree.isDormant) {
+            enhancedGameState.enhancements.players.me.numOfDormantTrees += 1;
+        }
     });
 
     opponentTreeKeys.forEach((treeKey) => {
@@ -128,6 +138,10 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
             3 * projectedProductionWeight;
 
         enhancedGameState.enhancements.players.opponent.totalTreeSize += tree.size;
+
+        if (tree.isDormant) {
+            enhancedGameState.enhancements.players.me.numOfDormantTrees += 1;
+        }
     });
 
     const daysLeft = MAX_NUM_OF_DAYS - gameState.day;
@@ -169,12 +183,89 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
         currentNutrientsModifier -= 2;
     });
 
+    const influencedCells: { [index: string]: boolean } = {};
+
+    myTreeKeys.forEach((treeKey) => {
+        influencedCells[treeKey] = true;
+        const treeCoordinates = keyToHexCoordinates(treeKey);
+        [0, 1, 2, 3, 4, 5].forEach((directionID) => {
+            const hexDirection = getHexDirectionByID(directionID);
+            const influencedCoordinates = addHexDirection(treeCoordinates, hexDirection);
+            if (!isValidHexCoordinates(gameState, influencedCoordinates)) {
+                return;
+            }
+            const influencedKey = hexCoordinatesToKey(influencedCoordinates);
+            if (
+                gameState.players.me.trees[influencedKey] ||
+                // gameState.players.opponent.trees[influencedKey] ||
+                influencedCells[influencedKey]
+            ) {
+                return;
+            }
+            influencedCells[influencedKey] = true;
+        });
+    });
+
+    enhancedGameState.enhancements.players.me.influence = Object.keys(influencedCells).length;
+
     return enhancedGameState;
 };
 
-export type NormalizedGameStateEnhancement = {
+type GameStatePlayerMinMax = {
+    totalTreeSize: { min: number; max: number };
+    sun: { min: number; max: number };
+    score: { min: number; max: number };
+    averageSunProductionPerDay: { min: number; max: number };
+    influence: { min: number; max: number };
+};
+
+export type GameStateMinMax = {
     players: {
-        me: PlayerGameStateEnhancement;
-        opponent: PlayerGameStateEnhancement;
+        me: GameStatePlayerMinMax;
     };
+};
+
+export const getGameStateMinMax = (enhancedGameStates: EnhancedGameState[]): GameStateMinMax => {
+    const myTotalTreeSizes: number[] = [];
+    const mySuns: number[] = [];
+    const myScores: number[] = [];
+    const averageSunProductionPerDay: number[] = [];
+    const myInfluences: number[] = [];
+
+    enhancedGameStates.forEach((enhancedGameState) => {
+        myTotalTreeSizes.push(enhancedGameState.enhancements.players.me.totalTreeSize);
+        mySuns.push(enhancedGameState.players.me.sun);
+        myScores.push(enhancedGameState.players.me.score);
+        averageSunProductionPerDay.push(enhancedGameState.enhancements.players.me.averageSunProductionPerDay);
+        myInfluences.push(enhancedGameState.enhancements.players.me.influence);
+    });
+
+    const gameStateMinMax: GameStateMinMax = {
+        players: {
+            me: {
+                totalTreeSize: {
+                    min: Math.min(...myTotalTreeSizes),
+                    max: Math.max(...myTotalTreeSizes),
+                },
+                sun: {
+                    min: Math.min(...mySuns),
+                    max: Math.max(...mySuns),
+                },
+                score: {
+                    min: Math.min(...myScores),
+                    max: Math.max(...myScores),
+                },
+                averageSunProductionPerDay: {
+                    min: Math.min(...averageSunProductionPerDay),
+                    max: Math.max(...averageSunProductionPerDay),
+                },
+                influence: {
+                    min: Math.min(...myInfluences),
+                    max: Math.max(...myInfluences),
+                },
+            },
+        },
+    };
+
+    return gameStateMinMax;
 };

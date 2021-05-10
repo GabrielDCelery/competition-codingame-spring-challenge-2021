@@ -16,13 +16,7 @@ export const getSeedCost = (numOfTreesOfSameSize: number): number => {
     return numOfTreesOfSameSize;
 };
 
-export const getTreeGrowCost = ({
-    targetSize,
-    numOfTreesOfSameSize,
-}: {
-    targetSize: number;
-    numOfTreesOfSameSize: number;
-}): number => {
+export const getTreeGrowCost = (targetSize: number, numOfTreesOfSameSize: number): number => {
     if (targetSize === 1) {
         return BASE_GROW_COST_TO_1 + numOfTreesOfSameSize;
     }
@@ -35,13 +29,7 @@ export const getTreeGrowCost = ({
     throw new Error(`getTreeBaseGrowCost`);
 };
 
-export const getHarvestScoreValue = ({
-    nutrients,
-    richness,
-}: {
-    nutrients: number;
-    richness: number | null;
-}): number => {
+export const getHarvestScoreValue = (nutrients: number, richness: number | null): number => {
     if (richness === null) {
         throw new Error('getHarvestBonus');
     }

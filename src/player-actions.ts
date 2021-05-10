@@ -34,7 +34,7 @@ export const applyHarvestActionToGameState = (gameState: GameState, sourceCellID
     const treeCoordinates = gameState.map.cellIndexToHexCoordinates[sourceCellID];
     const [q, r] = treeCoordinates;
     const richness = gameState.map.richnessMatrix[r][q];
-    const harvestScore = getHarvestScoreValue({ nutrients: gameState.nutrients, richness });
+    const harvestScore = getHarvestScoreValue(gameState.nutrients, richness);
     gameState.players.me.score = gameState.players.me.score + harvestScore;
     const treeKey = hexCoordinatesToKey(treeCoordinates);
     delete gameState.players.me.trees[treeKey];
@@ -47,7 +47,7 @@ export const applyGrowActionToGameState = (gameState: GameState, sourceCellID: n
     const treeKey = hexCoordinatesToKey(treeCoordinates);
     const targetSize = gameState.players.me.trees[treeKey].size + 1;
     const numOfTreesOfSameSize = getNumOfTreesOfSameSize(gameState, targetSize);
-    const growCost = getTreeGrowCost({ targetSize, numOfTreesOfSameSize });
+    const growCost = getTreeGrowCost(targetSize, numOfTreesOfSameSize);
     gameState.players.me.trees[treeKey].size = targetSize;
     gameState.players.me.trees[treeKey].isDormant = true;
     gameState.players.me.sun -= growCost;
