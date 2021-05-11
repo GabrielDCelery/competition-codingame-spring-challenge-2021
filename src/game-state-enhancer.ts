@@ -8,17 +8,14 @@ import {
     scaleHexDirection,
 } from './hex-map-transforms';
 
-const getTreeShadowModifiersForWeek = (
-    gameState: GameState,
-    treatEveryTreeAsSizeThree?: boolean
-): { [index: string]: number } => {
+const getTreeShadowModifiersForWeek = (gameState: GameState): { [index: string]: number } => {
     const shadowModifiers: { [index: string]: number } = {};
 
     const treeKeys = [...Object.keys(gameState.players.me.trees), ...Object.keys(gameState.players.opponent.trees)];
 
     treeKeys.forEach((treeKey) => {
         const treeCastingShadow = gameState.players.me.trees[treeKey] || gameState.players.opponent.trees[treeKey];
-        const treeCastingShadowSize = treatEveryTreeAsSizeThree === true ? 3 : treeCastingShadow.size;
+        const treeCastingShadowSize = treeCastingShadow.size;
 
         if (treeCastingShadowSize === 0) {
             return;
@@ -28,7 +25,7 @@ const getTreeShadowModifiersForWeek = (
 
         for (let directionID = 0, iMax = 6; directionID < iMax; directionID++) {
             const hexDirection = getHexDirectionByID(directionID);
-            const maxScale = treatEveryTreeAsSizeThree ? 3 : treeCastingShadow.size;
+            const maxScale = treeCastingShadow.size;
 
             for (let scale = 1; scale <= maxScale; scale++) {
                 const scaledHexDirection = scaleHexDirection(hexDirection, scale);
@@ -47,7 +44,7 @@ const getTreeShadowModifiersForWeek = (
                     continue;
                 }
 
-                const treeBeingCastShadowOnSize = treatEveryTreeAsSizeThree === true ? 3 : treeBeingCastShadowOn.size;
+                const treeBeingCastShadowOnSize = treeBeingCastShadowOn.size;
 
                 if (treeCastingShadowSize < treeBeingCastShadowOnSize) {
                     continue;
@@ -64,12 +61,12 @@ const getTreeShadowModifiersForWeek = (
 type PlayerGameStateEnhancement = {
     totalTreeSize: number;
     averageSunProductionPerDay: number;
-    projectedAverageSunProductionPerDay: number;
     projectedFinalScore: number;
     influence: number;
     numOfDormantTrees: number;
     expansionsAverageSunninessPerDay: number;
     numOfExpansions: number;
+    averageRichnessCovered: number;
 };
 
 type GameStateEnhancement = {
@@ -91,33 +88,33 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
                 me: {
                     totalTreeSize: 0,
                     averageSunProductionPerDay: 0,
-                    projectedAverageSunProductionPerDay: 0,
                     projectedFinalScore: 0,
                     influence: 0,
                     numOfDormantTrees: 0,
                     expansionsAverageSunninessPerDay: 0,
                     numOfExpansions: 0,
+                    averageRichnessCovered: 0,
                 },
                 opponent: {
                     totalTreeSize: 0,
                     averageSunProductionPerDay: 0,
-                    projectedAverageSunProductionPerDay: 0,
                     projectedFinalScore: 0,
                     influence: 0,
                     numOfDormantTrees: 0,
                     expansionsAverageSunninessPerDay: 0,
                     numOfExpansions: 0,
+                    averageRichnessCovered: 0,
                 },
             },
         },
     };
 
     const treeShadowModifiers = getTreeShadowModifiersForWeek(gameState);
-    const treeShadowModifiersTreatingEveryTreeAsSizeThree = getTreeShadowModifiersForWeek(gameState, true);
     const myTreeKeys = Object.keys(gameState.players.me.trees);
     const opponentTreeKeys = Object.keys(gameState.players.opponent.trees);
 
     const numOfSizeZeroTrees = getNumOfTreesOfSameSize(gameState, 0);
+    let myTotalRichness = 0;
 
     myTreeKeys.forEach((treeKey) => {
         const tree = gameState.players.me.trees[treeKey];
@@ -125,10 +122,10 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
         const productionWeight = 1 - (treeShadowModifiers[treeKey] || 0);
         enhancedGameState.enhancements.players.me.averageSunProductionPerDay += tree.size * productionWeight;
 
-        const projectedProductionWeight = 1 - (treeShadowModifiersTreatingEveryTreeAsSizeThree[treeKey] || 0);
-        enhancedGameState.enhancements.players.me.projectedAverageSunProductionPerDay += 3 * projectedProductionWeight;
-
         enhancedGameState.enhancements.players.me.totalTreeSize += tree.size;
+
+        const [q, r] = keyToHexCoordinates(treeKey);
+        myTotalRichness += gameState.map.richnessMatrix[r][q] || 0;
 
         if (tree.isDormant) {
             enhancedGameState.enhancements.players.me.numOfDormantTrees += 1;
@@ -140,7 +137,10 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
         }
     });
 
+    enhancedGameState.enhancements.players.me.averageRichnessCovered = myTotalRichness / myTreeKeys.length;
     enhancedGameState.enhancements.players.me.numOfExpansions = numOfSizeZeroTrees;
+
+    let opponentTotalRichness = 0;
 
     opponentTreeKeys.forEach((treeKey) => {
         const tree = gameState.players.opponent.trees[treeKey];
@@ -148,11 +148,10 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
         const productionWeight = 1 - (treeShadowModifiers[treeKey] || 0);
         enhancedGameState.enhancements.players.opponent.averageSunProductionPerDay += tree.size * productionWeight;
 
-        const projectedProductionWeight = 1 - (treeShadowModifiersTreatingEveryTreeAsSizeThree[treeKey] || 0);
-        enhancedGameState.enhancements.players.opponent.projectedAverageSunProductionPerDay +=
-            3 * projectedProductionWeight;
-
         enhancedGameState.enhancements.players.opponent.totalTreeSize += tree.size;
+
+        const [q, r] = keyToHexCoordinates(treeKey);
+        opponentTotalRichness += gameState.map.richnessMatrix[r][q] || 0;
 
         if (tree.isDormant) {
             enhancedGameState.enhancements.players.opponent.numOfDormantTrees += 1;
@@ -163,6 +162,8 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
                 productionWeight / numOfSizeZeroTrees;
         }
     });
+
+    enhancedGameState.enhancements.players.opponent.averageRichnessCovered = opponentTotalRichness / myTreeKeys.length;
 
     const daysLeft = MAX_NUM_OF_DAYS - gameState.day;
     enhancedGameState.enhancements.players.me.projectedFinalScore +=

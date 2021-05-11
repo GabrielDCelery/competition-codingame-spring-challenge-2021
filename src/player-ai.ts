@@ -6,7 +6,6 @@ import {
     calculateScoreUtility,
     calculateSunStoredUtility,
     calcRelativeProductionUtility,
-    //  calcRelativeProjectedProductionUtility,
     calcRelativeProjectedScoreAdvantage,
     calculateAverageSunProductionUtility,
     calculateTotalTreeSizeUtility,
@@ -40,19 +39,10 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
             calculateExpansionUtility(newEnhancedGameState, gameStateMinMax),
             calculateNoOverExtensionUtility(newEnhancedGameState, gameStateMinMax),
             calcRelativeProductionUtility(newEnhancedGameState),
-            //  calcRelativeProjectedProductionUtility(newEnhancedGameState),
             calcRelativeProjectedScoreAdvantage(newEnhancedGameState),
         ];
 
         const averagedUtilities = average(utilities);
-
-        console.error(
-            JSON.stringify({
-                move: possibleMoves[index],
-                averagedUtilities,
-                utilities,
-            })
-        );
 
         return averagedUtilities;
     });

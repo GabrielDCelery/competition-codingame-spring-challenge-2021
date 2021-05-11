@@ -144,16 +144,3 @@ export const calcRelativeProductionUtility = (newEnhancedGameState: EnhancedGame
     // const linearRiseWeight = normalizedLinear({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS });
     return utility;
 };
-
-export const calcRelativeProjectedProductionUtility = (newEnhancedGameState: EnhancedGameState): number => {
-    const totalAverageProduction =
-        newEnhancedGameState.enhancements.players.me.projectedAverageSunProductionPerDay +
-        newEnhancedGameState.enhancements.players.opponent.projectedAverageSunProductionPerDay;
-    const utility =
-        totalAverageProduction === 0
-            ? 0.5
-            : newEnhancedGameState.enhancements.players.me.projectedAverageSunProductionPerDay / totalAverageProduction;
-    //    const logarithmicDecayWeight =   1 - normalizedExponential({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS, a: 3 });
-    const linearRiseWeight = normalizedLinear({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS });
-    return linearRiseWeight * utility;
-};
