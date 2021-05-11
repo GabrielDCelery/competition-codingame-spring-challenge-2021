@@ -90,6 +90,35 @@ export const calculateInfluenceUtility = (
     );
 };
 
+export const calculateExpansionUtility = (
+    newEnhancedGameState: EnhancedGameState,
+    gameStateMinMax: GameStateMinMax
+): number => {
+    const exponentialRiseWeight = normalizedExponential({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS });
+    const logarithmicDecayWeight = 1 - exponentialRiseWeight;
+    return (
+        logarithmicDecayWeight *
+        normalizeValueBetweenZeroAndOne({
+            min: gameStateMinMax.players.me.expansionsAverageSunninessPerDay.min,
+            max: gameStateMinMax.players.me.expansionsAverageSunninessPerDay.max,
+            value: newEnhancedGameState.enhancements.players.me.expansionsAverageSunninessPerDay,
+        })
+    );
+};
+
+export const calculateNoOverExtensionUtility = (
+    newEnhancedGameState: EnhancedGameState,
+    gameStateMinMax: GameStateMinMax
+): number => {
+    const linearDecayWeight = normalizedLinearDecay({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS });
+    const normalizedNumOfExpansions = normalizeValueBetweenZeroAndOne({
+        min: gameStateMinMax.players.me.numOfExpansions.min,
+        max: gameStateMinMax.players.me.numOfExpansions.max,
+        value: newEnhancedGameState.enhancements.players.me.numOfExpansions,
+    });
+    return linearDecayWeight * (1 - normalizedNumOfExpansions);
+};
+
 export const calcRelativeProjectedScoreAdvantage = (newEnhancedGameState: EnhancedGameState): number => {
     const totalProjectedScoreBetweenPlayers =
         newEnhancedGameState.enhancements.players.me.projectedFinalScore +

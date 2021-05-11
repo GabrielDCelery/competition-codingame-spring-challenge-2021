@@ -1,5 +1,5 @@
 import { MAX_NUM_OF_DAYS } from './game-config';
-import { GameState, isValidHexCoordinates } from './game-state';
+import { GameState, getNumOfTreesOfSameSize, isValidHexCoordinates } from './game-state';
 import {
     addHexDirection,
     getHexDirectionByID,
@@ -68,6 +68,8 @@ type PlayerGameStateEnhancement = {
     projectedFinalScore: number;
     influence: number;
     numOfDormantTrees: number;
+    expansionsAverageSunninessPerDay: number;
+    numOfExpansions: number;
 };
 
 type GameStateEnhancement = {
@@ -93,6 +95,8 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
                     projectedFinalScore: 0,
                     influence: 0,
                     numOfDormantTrees: 0,
+                    expansionsAverageSunninessPerDay: 0,
+                    numOfExpansions: 0,
                 },
                 opponent: {
                     totalTreeSize: 0,
@@ -101,6 +105,8 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
                     projectedFinalScore: 0,
                     influence: 0,
                     numOfDormantTrees: 0,
+                    expansionsAverageSunninessPerDay: 0,
+                    numOfExpansions: 0,
                 },
             },
         },
@@ -110,6 +116,8 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
     const treeShadowModifiersTreatingEveryTreeAsSizeThree = getTreeShadowModifiersForWeek(gameState, true);
     const myTreeKeys = Object.keys(gameState.players.me.trees);
     const opponentTreeKeys = Object.keys(gameState.players.opponent.trees);
+
+    const numOfSizeZeroTrees = getNumOfTreesOfSameSize(gameState, 0);
 
     myTreeKeys.forEach((treeKey) => {
         const tree = gameState.players.me.trees[treeKey];
@@ -125,7 +133,14 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
         if (tree.isDormant) {
             enhancedGameState.enhancements.players.me.numOfDormantTrees += 1;
         }
+
+        if (tree.size === 0) {
+            enhancedGameState.enhancements.players.me.expansionsAverageSunninessPerDay +=
+                productionWeight / numOfSizeZeroTrees;
+        }
     });
+
+    enhancedGameState.enhancements.players.me.numOfExpansions = numOfSizeZeroTrees;
 
     opponentTreeKeys.forEach((treeKey) => {
         const tree = gameState.players.opponent.trees[treeKey];
@@ -140,7 +155,12 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
         enhancedGameState.enhancements.players.opponent.totalTreeSize += tree.size;
 
         if (tree.isDormant) {
-            enhancedGameState.enhancements.players.me.numOfDormantTrees += 1;
+            enhancedGameState.enhancements.players.opponent.numOfDormantTrees += 1;
+        }
+
+        if (tree.size === 0) {
+            enhancedGameState.enhancements.players.opponent.expansionsAverageSunninessPerDay +=
+                productionWeight / numOfSizeZeroTrees;
         }
     });
 
@@ -217,6 +237,8 @@ type GameStatePlayerMinMax = {
     score: { min: number; max: number };
     averageSunProductionPerDay: { min: number; max: number };
     influence: { min: number; max: number };
+    expansionsAverageSunninessPerDay: { min: number; max: number };
+    numOfExpansions: { min: number; max: number };
 };
 
 export type GameStateMinMax = {
@@ -231,6 +253,8 @@ export const getGameStateMinMax = (enhancedGameStates: EnhancedGameState[]): Gam
     const myScores: number[] = [];
     const averageSunProductionPerDay: number[] = [];
     const myInfluences: number[] = [];
+    const myExpansionsAverageSunninessPerDays: number[] = [];
+    const myNumberOfExpansionsList: number[] = [];
 
     enhancedGameStates.forEach((enhancedGameState) => {
         myTotalTreeSizes.push(enhancedGameState.enhancements.players.me.totalTreeSize);
@@ -238,6 +262,10 @@ export const getGameStateMinMax = (enhancedGameStates: EnhancedGameState[]): Gam
         myScores.push(enhancedGameState.players.me.score);
         averageSunProductionPerDay.push(enhancedGameState.enhancements.players.me.averageSunProductionPerDay);
         myInfluences.push(enhancedGameState.enhancements.players.me.influence);
+        myExpansionsAverageSunninessPerDays.push(
+            enhancedGameState.enhancements.players.me.expansionsAverageSunninessPerDay
+        );
+        myNumberOfExpansionsList.push(enhancedGameState.enhancements.players.me.numOfExpansions);
     });
 
     const gameStateMinMax: GameStateMinMax = {
@@ -262,6 +290,14 @@ export const getGameStateMinMax = (enhancedGameStates: EnhancedGameState[]): Gam
                 influence: {
                     min: Math.min(...myInfluences),
                     max: Math.max(...myInfluences),
+                },
+                expansionsAverageSunninessPerDay: {
+                    min: Math.min(...myExpansionsAverageSunninessPerDays),
+                    max: Math.max(...myExpansionsAverageSunninessPerDays),
+                },
+                numOfExpansions: {
+                    min: Math.min(...myNumberOfExpansionsList),
+                    max: Math.max(...myNumberOfExpansionsList),
                 },
             },
         },

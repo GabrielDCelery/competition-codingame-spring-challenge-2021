@@ -11,6 +11,8 @@ import {
     calculateAverageSunProductionUtility,
     calculateTotalTreeSizeUtility,
     calculateInfluenceUtility,
+    calculateExpansionUtility,
+    calculateNoOverExtensionUtility,
 } from './player-ai-utilities';
 
 export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: string[]): string => {
@@ -32,9 +34,11 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
         const utilities = [
             calculateScoreUtility(newEnhancedGameState, gameStateMinMax),
             calculateAverageSunProductionUtility(newEnhancedGameState, gameStateMinMax),
-            calculateSunStoredUtility(newEnhancedGameState, gameStateMinMax),
+            // calculateSunStoredUtility(newEnhancedGameState, gameStateMinMax),
             calculateTotalTreeSizeUtility(newEnhancedGameState, gameStateMinMax),
             calculateInfluenceUtility(newEnhancedGameState, gameStateMinMax),
+            calculateExpansionUtility(newEnhancedGameState, gameStateMinMax),
+            calculateNoOverExtensionUtility(newEnhancedGameState, gameStateMinMax),
             calcRelativeProductionUtility(newEnhancedGameState),
             //  calcRelativeProjectedProductionUtility(newEnhancedGameState),
             calcRelativeProjectedScoreAdvantage(newEnhancedGameState),
