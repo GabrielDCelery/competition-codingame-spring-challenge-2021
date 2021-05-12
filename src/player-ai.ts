@@ -8,6 +8,7 @@ import {
 } from './player-actions';
 import { average } from './utility-helpers';
 import {
+    calculateTreeSizeUtility,
     calculateMapCellsControlledUtility,
     calculateSunProductionUtility,
     calculateAvoidCramnessUtility,
@@ -63,7 +64,7 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
             const newGameState = applyActionToGameState(clonedGameState, playerAction);
             const newEnhancedGameState = enhanceGameState(newGameState);
             const utilities = [
-                // calculateTreeSizeUtility(newEnhancedGameState),
+                calculateTreeSizeUtility(newEnhancedGameState),
                 calculateSunProductionUtility(newEnhancedGameState),
                 calculateRelativeProductionUtility(newEnhancedGameState),
             ];

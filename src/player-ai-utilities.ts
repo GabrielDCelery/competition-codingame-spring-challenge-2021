@@ -147,6 +147,13 @@ export const calculateAvoidSpammingSeedsUtility = (newGameState: EnhancedGameSta
 };
 
 export const calculateRelativeProjectedScoreAdvantageUtility = (newGameState: EnhancedGameState): number => {
+    console.error('calculateRelativeProjectedScoreAdvantageUtility');
+    console.error(
+        JSON.stringify([
+            newGameState.enhancements.players.me.projectedFinalScore,
+            newGameState.enhancements.players.opponent.projectedFinalScore,
+        ])
+    );
     const totalProjectedScoreBetweenPlayers =
         newGameState.enhancements.players.me.projectedFinalScore +
         newGameState.enhancements.players.opponent.projectedFinalScore;
