@@ -169,9 +169,8 @@ export const enhanceGameState = (newGameState: GameState): EnhancedGameState => 
     });
 
     const daysLeft = MAX_NUM_OF_DAYS - newGameState.day;
-    enhancedGameState.enhancements.players.me.projectedFinalScore +=
-        newGameState.players.me.score +
-        (enhancedGameState.enhancements.players.me.averageSunProductionPerDay * daysLeft) / 3;
+    enhancedGameState.enhancements.players.me.projectedFinalScore += newGameState.players.me.score;
+    let mySunProducedTillEndOfGame = enhancedGameState.enhancements.players.me.averageSunProductionPerDay * daysLeft;
 
     let currentNutrientsModifier = 0;
 
@@ -180,17 +179,23 @@ export const enhanceGameState = (newGameState: GameState): EnhancedGameState => 
         if (tree.size < 3) {
             return;
         }
+        if (mySunProducedTillEndOfGame < 4) {
+            return;
+        }
         const treeCoordinates = keyToHexCoordinates(treeKey);
         const [q, r] = treeCoordinates;
         const richness = newGameState.map.richnessMatrix[r][q] || 0;
         enhancedGameState.enhancements.players.me.projectedFinalScore +=
             newGameState.nutrients + currentNutrientsModifier + richness;
-        currentNutrientsModifier -= 2;
+        currentNutrientsModifier -= 1;
+        mySunProducedTillEndOfGame -= 4;
     });
 
-    enhancedGameState.enhancements.players.opponent.projectedFinalScore +=
-        newGameState.players.opponent.score +
-        (enhancedGameState.enhancements.players.opponent.averageSunProductionPerDay * daysLeft) / 3;
+    enhancedGameState.enhancements.players.me.projectedFinalScore += mySunProducedTillEndOfGame / 3;
+
+    enhancedGameState.enhancements.players.opponent.projectedFinalScore += newGameState.players.opponent.score;
+    let opponentSunProducedTillEndOfGame =
+        enhancedGameState.enhancements.players.opponent.averageSunProductionPerDay * daysLeft;
 
     currentNutrientsModifier = 0;
 
@@ -199,13 +204,19 @@ export const enhanceGameState = (newGameState: GameState): EnhancedGameState => 
         if (tree.size < 3) {
             return;
         }
+        if (opponentSunProducedTillEndOfGame < 4) {
+            return;
+        }
         const treeCoordinates = keyToHexCoordinates(treeKey);
         const [q, r] = treeCoordinates;
         const richness = newGameState.map.richnessMatrix[r][q] || 0;
         enhancedGameState.enhancements.players.opponent.projectedFinalScore +=
             newGameState.nutrients + currentNutrientsModifier + richness;
-        currentNutrientsModifier -= 2;
+        currentNutrientsModifier -= 1;
+        opponentSunProducedTillEndOfGame -= 4;
     });
+
+    enhancedGameState.enhancements.players.opponent.projectedFinalScore += opponentSunProducedTillEndOfGame / 3;
 
     return enhancedGameState;
 };
