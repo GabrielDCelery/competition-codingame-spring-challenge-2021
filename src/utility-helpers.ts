@@ -33,6 +33,15 @@ export const average = (array: Array<number>): number => {
     return sum(array) / array.length;
 };
 
+export const mean = (array: Array<number>): number => {
+    return average(array);
+};
+
+export const standardDeviation = (array: Array<number>): number => {
+    const u = mean(array);
+    return Math.sqrt(sum(array.map((x) => (x - u) ** 2)) / array.length);
+};
+
 export const weightedAverage = (array: Array<{ value: number; weight: number }>): number => {
     let final = 0;
 
@@ -114,4 +123,17 @@ export const normalizeValueBetweenZeroAndOne = ({
         return 0;
     }
     return (value - min) / (max - min);
+};
+
+export const standardValue = ({
+    mean,
+    standardDeviation,
+    value,
+}: {
+    mean: number;
+    standardDeviation: number;
+    value: number;
+}): number => {
+    const standardValue = (value - mean) / standardDeviation;
+    return standardValue;
 };

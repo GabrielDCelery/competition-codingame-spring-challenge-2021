@@ -7,6 +7,7 @@ export const RICHNESS_3_COMPLETE_BONUS = 4;
 export const BASE_GROW_COST_TO_1 = 1;
 export const BASE_GROW_COST_TO_2 = 3;
 export const BASE_GROW_COST_TO_3 = 7;
+export const MAX_TREE_SIZE = 3;
 
 export const getNumOfDaysLeft = (days: number): number => {
     return MAX_NUM_OF_DAYS - days;

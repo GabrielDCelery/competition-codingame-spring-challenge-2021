@@ -7,6 +7,7 @@ import {
     keyToHexCoordinates,
     scaleHexDirection,
 } from './hex-map-transforms';
+import { mean, standardDeviation } from './utility-helpers';
 
 const getTreeShadowModifiersForWeek = (gameState: GameState): { [index: string]: number } => {
     const shadowModifiers: { [index: string]: number } = {};
@@ -58,7 +59,67 @@ const getTreeShadowModifiersForWeek = (gameState: GameState): { [index: string]:
     return shadowModifiers;
 };
 
+export type AreaAnalysis = {
+    players: {
+        me: {
+            numOfTrees: number;
+            numOfSeeds: number;
+        };
+        opponent: {
+            numOfTrees: number;
+            numOfSeeds: number;
+        };
+    };
+};
+
+const getAreaAnalysisList = (gameState: GameState): AreaAnalysis[] => {
+    //  const areaCenters = [11, 9, 13, 0, 7, 15, 17];
+    const areaCenters = [11, 10, 9, 12, 3, 2, 8, 13, 4, 0, 1, 7, 14, 5, 6, 18, 15, 16, 17];
+    const areaAnalysisList = areaCenters.map((areaCenterID) => {
+        const areaAnalysis: AreaAnalysis = {
+            players: {
+                me: {
+                    numOfTrees: 0,
+                    numOfSeeds: 0,
+                },
+                opponent: {
+                    numOfTrees: 0,
+                    numOfSeeds: 0,
+                },
+            },
+        };
+
+        const areaCenterCoordinates = gameState.map.cellIndexToHexCoordinates[areaCenterID];
+
+        const areaCoordinatesList = [
+            areaCenterCoordinates,
+            ...[0, 1, 2, 3, 4, 5].map((directionID) => {
+                const hexDirection = getHexDirectionByID(directionID);
+                return addHexDirection(areaCenterCoordinates, hexDirection);
+            }),
+        ];
+
+        areaCoordinatesList.forEach((areaCoordinates) => {
+            const key = hexCoordinatesToKey(areaCoordinates);
+            const tree = gameState.players.me.trees[key];
+            if (tree) {
+                if (tree.size === 0) {
+                    areaAnalysis.players.me.numOfSeeds += 1;
+                } else {
+                    areaAnalysis.players.me.numOfTrees += 1;
+                }
+            }
+        });
+
+        return areaAnalysis;
+    });
+    return areaAnalysisList;
+};
+
 type PlayerGameStateEnhancement = {
+    totalNumOfTrees: number;
+    totalNumOfSeeds: number;
+    averageTreeSize: number;
     totalTreeSize: number;
     averageSunProductionPerDay: number;
     projectedFinalScore: number;
@@ -70,6 +131,7 @@ type PlayerGameStateEnhancement = {
 };
 
 type GameStateEnhancement = {
+    totalNumOfViableCells: number;
     players: {
         me: PlayerGameStateEnhancement;
         opponent: PlayerGameStateEnhancement;
@@ -78,14 +140,19 @@ type GameStateEnhancement = {
 
 export type EnhancedGameState = GameState & {
     enhancements: GameStateEnhancement;
+    areaAnalysisList: AreaAnalysis[];
 };
 
-export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
+export const enhanceGameState = (newGameState: GameState): EnhancedGameState => {
     const enhancedGameState: EnhancedGameState = {
-        ...gameState,
+        ...newGameState,
         enhancements: {
+            totalNumOfViableCells: 0,
             players: {
                 me: {
+                    totalNumOfTrees: 0,
+                    totalNumOfSeeds: 0,
+                    averageTreeSize: 0,
                     totalTreeSize: 0,
                     averageSunProductionPerDay: 0,
                     projectedFinalScore: 0,
@@ -96,6 +163,9 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
                     averageRichnessCovered: 0,
                 },
                 opponent: {
+                    totalNumOfTrees: 0,
+                    totalNumOfSeeds: 0,
+                    averageTreeSize: 0,
                     totalTreeSize: 0,
                     averageSunProductionPerDay: 0,
                     projectedFinalScore: 0,
@@ -107,17 +177,45 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
                 },
             },
         },
+        areaAnalysisList: getAreaAnalysisList(newGameState),
     };
 
-    const treeShadowModifiers = getTreeShadowModifiersForWeek(gameState);
-    const myTreeKeys = Object.keys(gameState.players.me.trees);
-    const opponentTreeKeys = Object.keys(gameState.players.opponent.trees);
+    const treeShadowModifiers = getTreeShadowModifiersForWeek(newGameState);
+    const myTreeKeys = Object.keys(newGameState.players.me.trees);
+    const opponentTreeKeys = Object.keys(newGameState.players.opponent.trees);
 
-    const numOfSizeZeroTrees = getNumOfTreesOfSameSize(gameState, 0);
+    //************ rework start */
+    newGameState.map.cellIndexToHexCoordinates.forEach((coordinates) => {
+        const [q, r] = coordinates;
+        const richness = newGameState.map.richnessMatrix[r][q];
+        if (richness === 0) {
+            return;
+        }
+        enhancedGameState.enhancements.totalNumOfViableCells += 1;
+    });
+
+    let totalTreeSize = 0;
+    let totalNumOfTrees = 0;
+    let totalNumOfSeeds = 0;
+    myTreeKeys.forEach((treeKey) => {
+        const tree = newGameState.players.me.trees[treeKey];
+        if (tree.size === 0) {
+            totalNumOfSeeds += 1;
+            return;
+        }
+        totalTreeSize += tree.size;
+        totalNumOfTrees += 1;
+    });
+    enhancedGameState.enhancements.players.me.averageTreeSize = totalTreeSize / totalNumOfTrees;
+    enhancedGameState.enhancements.players.me.totalNumOfTrees = totalNumOfTrees;
+    enhancedGameState.enhancements.players.me.totalNumOfSeeds = totalNumOfSeeds;
+
+    //************ rework end */
+    const numOfSizeZeroTrees = getNumOfTreesOfSameSize(newGameState, 0);
     let myTotalRichness = 0;
 
     myTreeKeys.forEach((treeKey) => {
-        const tree = gameState.players.me.trees[treeKey];
+        const tree = newGameState.players.me.trees[treeKey];
 
         const productionWeight = 1 - (treeShadowModifiers[treeKey] || 0);
         enhancedGameState.enhancements.players.me.averageSunProductionPerDay += tree.size * productionWeight;
@@ -125,7 +223,7 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
         enhancedGameState.enhancements.players.me.totalTreeSize += tree.size;
 
         const [q, r] = keyToHexCoordinates(treeKey);
-        myTotalRichness += gameState.map.richnessMatrix[r][q] || 0;
+        myTotalRichness += newGameState.map.richnessMatrix[r][q] || 0;
 
         if (tree.isDormant) {
             enhancedGameState.enhancements.players.me.numOfDormantTrees += 1;
@@ -143,7 +241,7 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
     let opponentTotalRichness = 0;
 
     opponentTreeKeys.forEach((treeKey) => {
-        const tree = gameState.players.opponent.trees[treeKey];
+        const tree = newGameState.players.opponent.trees[treeKey];
 
         const productionWeight = 1 - (treeShadowModifiers[treeKey] || 0);
         enhancedGameState.enhancements.players.opponent.averageSunProductionPerDay += tree.size * productionWeight;
@@ -151,7 +249,7 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
         enhancedGameState.enhancements.players.opponent.totalTreeSize += tree.size;
 
         const [q, r] = keyToHexCoordinates(treeKey);
-        opponentTotalRichness += gameState.map.richnessMatrix[r][q] || 0;
+        opponentTotalRichness += newGameState.map.richnessMatrix[r][q] || 0;
 
         if (tree.isDormant) {
             enhancedGameState.enhancements.players.opponent.numOfDormantTrees += 1;
@@ -165,42 +263,42 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
 
     enhancedGameState.enhancements.players.opponent.averageRichnessCovered = opponentTotalRichness / myTreeKeys.length;
 
-    const daysLeft = MAX_NUM_OF_DAYS - gameState.day;
+    const daysLeft = MAX_NUM_OF_DAYS - newGameState.day;
     enhancedGameState.enhancements.players.me.projectedFinalScore +=
-        gameState.players.me.score +
+        newGameState.players.me.score +
         (enhancedGameState.enhancements.players.me.averageSunProductionPerDay * daysLeft) / 3;
 
     let currentNutrientsModifier = 0;
 
     myTreeKeys.forEach((treeKey) => {
-        const tree = gameState.players.me.trees[treeKey];
+        const tree = newGameState.players.me.trees[treeKey];
         if (tree.size < 3) {
             return;
         }
         const treeCoordinates = keyToHexCoordinates(treeKey);
         const [q, r] = treeCoordinates;
-        const richness = gameState.map.richnessMatrix[r][q] || 0;
+        const richness = newGameState.map.richnessMatrix[r][q] || 0;
         enhancedGameState.enhancements.players.me.projectedFinalScore +=
-            gameState.nutrients + currentNutrientsModifier + richness;
+            newGameState.nutrients + currentNutrientsModifier + richness;
         currentNutrientsModifier -= 2;
     });
 
     enhancedGameState.enhancements.players.opponent.projectedFinalScore +=
-        gameState.players.opponent.score +
+        newGameState.players.opponent.score +
         (enhancedGameState.enhancements.players.opponent.averageSunProductionPerDay * daysLeft) / 3;
 
     currentNutrientsModifier = 0;
 
     opponentTreeKeys.forEach((treeKey) => {
-        const tree = gameState.players.opponent.trees[treeKey];
+        const tree = newGameState.players.opponent.trees[treeKey];
         if (tree.size < 3) {
             return;
         }
         const treeCoordinates = keyToHexCoordinates(treeKey);
         const [q, r] = treeCoordinates;
-        const richness = gameState.map.richnessMatrix[r][q] || 0;
+        const richness = newGameState.map.richnessMatrix[r][q] || 0;
         enhancedGameState.enhancements.players.opponent.projectedFinalScore +=
-            gameState.nutrients + currentNutrientsModifier + richness;
+            newGameState.nutrients + currentNutrientsModifier + richness;
         currentNutrientsModifier -= 2;
     });
 
@@ -212,12 +310,12 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
         [0, 1, 2, 3, 4, 5].forEach((directionID) => {
             const hexDirection = getHexDirectionByID(directionID);
             const influencedCoordinates = addHexDirection(treeCoordinates, hexDirection);
-            if (!isValidHexCoordinates(gameState, influencedCoordinates)) {
+            if (!isValidHexCoordinates(newGameState, influencedCoordinates)) {
                 return;
             }
             const influencedKey = hexCoordinatesToKey(influencedCoordinates);
             if (
-                gameState.players.me.trees[influencedKey] ||
+                newGameState.players.me.trees[influencedKey] ||
                 // gameState.players.opponent.trees[influencedKey] ||
                 influencedCells[influencedKey]
             ) {
@@ -232,27 +330,29 @@ export const enhanceGameState = (gameState: GameState): EnhancedGameState => {
     return enhancedGameState;
 };
 
-type GameStatePlayerMinMax = {
-    totalTreeSize: { min: number; max: number };
-    sun: { min: number; max: number };
-    score: { min: number; max: number };
-    averageSunProductionPerDay: { min: number; max: number };
-    influence: { min: number; max: number };
-    expansionsAverageSunninessPerDay: { min: number; max: number };
-    numOfExpansions: { min: number; max: number };
+type Statistics = { min: number; max: number; mean: number; standardDeviation: number };
+
+type GameStatePlayerStatistics = {
+    totalTreeSize: Statistics;
+    sun: Statistics;
+    score: Statistics;
+    averageSunProductionPerDay: Statistics;
+    influence: Statistics;
+    expansionsAverageSunninessPerDay: Statistics;
+    numOfExpansions: Statistics;
 };
 
-export type GameStateMinMax = {
+export type GameStateStatistics = {
     players: {
-        me: GameStatePlayerMinMax;
+        me: GameStatePlayerStatistics;
     };
 };
 
-export const getGameStateMinMax = (enhancedGameStates: EnhancedGameState[]): GameStateMinMax => {
+export const getGameStateStatistics = (enhancedGameStates: EnhancedGameState[]): GameStateStatistics => {
     const myTotalTreeSizes: number[] = [];
     const mySuns: number[] = [];
     const myScores: number[] = [];
-    const averageSunProductionPerDay: number[] = [];
+    const averageSunProductionPerDayList: number[] = [];
     const myInfluences: number[] = [];
     const myExpansionsAverageSunninessPerDays: number[] = [];
     const myNumberOfExpansionsList: number[] = [];
@@ -261,7 +361,7 @@ export const getGameStateMinMax = (enhancedGameStates: EnhancedGameState[]): Gam
         myTotalTreeSizes.push(enhancedGameState.enhancements.players.me.totalTreeSize);
         mySuns.push(enhancedGameState.players.me.sun);
         myScores.push(enhancedGameState.players.me.score);
-        averageSunProductionPerDay.push(enhancedGameState.enhancements.players.me.averageSunProductionPerDay);
+        averageSunProductionPerDayList.push(enhancedGameState.enhancements.players.me.averageSunProductionPerDay);
         myInfluences.push(enhancedGameState.enhancements.players.me.influence);
         myExpansionsAverageSunninessPerDays.push(
             enhancedGameState.enhancements.players.me.expansionsAverageSunninessPerDay
@@ -269,40 +369,54 @@ export const getGameStateMinMax = (enhancedGameStates: EnhancedGameState[]): Gam
         myNumberOfExpansionsList.push(enhancedGameState.enhancements.players.me.numOfExpansions);
     });
 
-    const gameStateMinMax: GameStateMinMax = {
+    const gameStateStatistics: GameStateStatistics = {
         players: {
             me: {
                 totalTreeSize: {
                     min: Math.min(...myTotalTreeSizes),
                     max: Math.max(...myTotalTreeSizes),
+                    mean: mean(myTotalTreeSizes),
+                    standardDeviation: standardDeviation(myTotalTreeSizes),
                 },
                 sun: {
                     min: Math.min(...mySuns),
                     max: Math.max(...mySuns),
+                    mean: mean(mySuns),
+                    standardDeviation: standardDeviation(mySuns),
                 },
                 score: {
                     min: Math.min(...myScores),
                     max: Math.max(...myScores),
+                    mean: mean(myScores),
+                    standardDeviation: standardDeviation(myScores),
                 },
                 averageSunProductionPerDay: {
-                    min: Math.min(...averageSunProductionPerDay),
-                    max: Math.max(...averageSunProductionPerDay),
+                    min: Math.min(...averageSunProductionPerDayList),
+                    max: Math.max(...averageSunProductionPerDayList),
+                    mean: mean(averageSunProductionPerDayList),
+                    standardDeviation: standardDeviation(averageSunProductionPerDayList),
                 },
                 influence: {
                     min: Math.min(...myInfluences),
                     max: Math.max(...myInfluences),
+                    mean: mean(myInfluences),
+                    standardDeviation: standardDeviation(myInfluences),
                 },
                 expansionsAverageSunninessPerDay: {
                     min: Math.min(...myExpansionsAverageSunninessPerDays),
                     max: Math.max(...myExpansionsAverageSunninessPerDays),
+                    mean: mean(myExpansionsAverageSunninessPerDays),
+                    standardDeviation: standardDeviation(myExpansionsAverageSunninessPerDays),
                 },
                 numOfExpansions: {
                     min: Math.min(...myNumberOfExpansionsList),
                     max: Math.max(...myNumberOfExpansionsList),
+                    mean: mean(myNumberOfExpansionsList),
+                    standardDeviation: standardDeviation(myNumberOfExpansionsList),
                 },
             },
         },
     };
 
-    return gameStateMinMax;
+    return gameStateStatistics;
 };

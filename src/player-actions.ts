@@ -2,23 +2,25 @@ import { GameState, getNumOfTreesOfSameSize } from './game-state';
 import { getHarvestScoreValue, getTreeGrowCost, getSeedCost } from './game-config';
 import { hexCoordinatesToKey } from './hex-map-transforms';
 
-export enum ActionType {
+export enum PlayerActionType {
     GROW = 'GROW',
     SEED = 'SEED',
     COMPLETE = 'COMPLETE',
     WAIT = 'WAIT',
 }
 
-export type Action = {
-    actionType: ActionType;
+export type PlayerAction = {
+    possibleMove: string;
+    actionType: PlayerActionType;
     sourceCellID: number;
     targetCellID: number;
 };
 
-export const convertGameInputStringToAction = (possibleMove: string): Action => {
+export const convertGameInputStringToAction = (possibleMove: string): PlayerAction => {
     const [actionType, sourceCellID, targetCellID] = possibleMove.split(' ');
     return {
-        actionType: actionType as ActionType,
+        possibleMove: possibleMove,
+        actionType: actionType as PlayerActionType,
         sourceCellID: parseInt(sourceCellID || '0', 10),
         targetCellID: parseInt(targetCellID || '0', 10),
     };
@@ -76,19 +78,19 @@ export const applySeedActionToGameState = (
     return gameState;
 };
 
-export const applyActionToGameState = (gameState: GameState, action: Action): GameState => {
+export const applyActionToGameState = (gameState: GameState, action: PlayerAction): GameState => {
     const { actionType, sourceCellID, targetCellID } = action;
     switch (actionType) {
-        case ActionType.WAIT: {
+        case PlayerActionType.WAIT: {
             return applyWaitActionToGameState(gameState);
         }
-        case ActionType.COMPLETE: {
+        case PlayerActionType.COMPLETE: {
             return applyHarvestActionToGameState(gameState, sourceCellID);
         }
-        case ActionType.GROW: {
+        case PlayerActionType.GROW: {
             return applyGrowActionToGameState(gameState, sourceCellID);
         }
-        case ActionType.SEED: {
+        case PlayerActionType.SEED: {
             return applySeedActionToGameState(gameState, sourceCellID, targetCellID);
         }
         default: {
