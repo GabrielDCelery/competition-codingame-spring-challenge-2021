@@ -8,7 +8,6 @@ import {
 } from './player-actions';
 import { average } from './utility-helpers';
 import {
-    calculateTreeSizeUtility,
     calculateMapCellsControlledUtility,
     calculateSunProductionUtility,
     calculateAvoidCramnessUtility,
@@ -43,7 +42,7 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
                 const newEnhancedGameState = enhanceGameState(newGameState);
                 const utilities = [calculateRelativeProjectedScoreAdvantageUtility(newEnhancedGameState)];
                 const possibleMoveUtility = average(utilities);
-                console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
+                // console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
                 if (possibleMoveUtility <= lastChosenMoveUtility) {
                     return;
                 }
@@ -64,12 +63,12 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
             const newGameState = applyActionToGameState(clonedGameState, playerAction);
             const newEnhancedGameState = enhanceGameState(newGameState);
             const utilities = [
-                //    calculateTreeSizeUtility(newEnhancedGameState),
+                // calculateTreeSizeUtility(newEnhancedGameState),
                 calculateSunProductionUtility(newEnhancedGameState),
                 calculateRelativeProductionUtility(newEnhancedGameState),
             ];
             const possibleMoveUtility = average(utilities);
-            console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
+            // console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
             if (possibleMoveUtility <= lastChosenMoveUtility) {
                 return;
             }
@@ -97,7 +96,7 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
                 calculateAreaCoveredRichnessUtility(newEnhancedGameState),
             ];
             const possibleMoveUtility = average(utilities);
-            console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
+            // console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
             if (possibleMoveUtility <= lastChosenMoveUtility) {
                 return;
             }

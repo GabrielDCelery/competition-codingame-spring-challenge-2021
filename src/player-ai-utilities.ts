@@ -1,6 +1,6 @@
 import { MAX_NUM_OF_DAYS, MAX_TREE_SIZE } from './game-config';
 import { isValidHexCoordinates } from './game-state';
-import { EnhancedGameState, GameStateStatistics } from './game-state-enhancer';
+import { EnhancedGameState } from './game-state-enhancer';
 import { addHexDirection, getHexDirectionByID, hexCoordinatesToKey, keyToHexCoordinates } from './hex-map-transforms';
 import {
     average,
@@ -8,29 +8,33 @@ import {
     normalizedExponentialDecay,
     normalizedLinear,
     normalizedLinearDecay,
-    normalizedPyramid,
-    normalizeValueBetweenZeroAndOne,
-    normalizedLogistic,
 } from './utility-helpers';
 
-export const calculateTreeSizeUtility = (newEnhancedGameState: EnhancedGameState): number => {
-    const treeSizes = Object.keys(newEnhancedGameState.players.me.trees).map((treeKey) => {
-        return newEnhancedGameState.players.me.trees[treeKey].size;
+export const calculateTreeSizeUtility = (newGameState: EnhancedGameState): number => {
+    const treeSizes = Object.keys(newGameState.players.me.trees).map((treeKey) => {
+        return newGameState.players.me.trees[treeKey].size;
     });
     const averageTreeSize = average(treeSizes);
     return 1 - normalizedExponentialDecay({ value: averageTreeSize, max: MAX_TREE_SIZE });
 };
 
-export const calculateSunProductionUtility = (newEnhancedGameState: EnhancedGameState): number => {
+export const calculateSunProductionUtility = (newGameState: EnhancedGameState): number => {
     const targetSunProduction = 20;
-    const exponentialRiseWeight = normalizedExponential({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS });
+    const exponentialRiseWeight = normalizedExponential({ value: newGameState.day, max: MAX_NUM_OF_DAYS });
     const logarithmicDecayWeight = 1 - exponentialRiseWeight;
-
     const production =
-        newEnhancedGameState.enhancements.players.me.averageSunProductionPerDay > targetSunProduction
+        newGameState.enhancements.players.me.averageSunProductionPerDay > targetSunProduction
             ? targetSunProduction
-            : newEnhancedGameState.enhancements.players.me.averageSunProductionPerDay;
+            : newGameState.enhancements.players.me.averageSunProductionPerDay;
     return logarithmicDecayWeight * normalizedLinear({ value: production, max: targetSunProduction });
+};
+
+export const calculateSunReservedUtility = (newGameState: EnhancedGameState): number => {
+    const targetSunReserved = 3;
+    const sunReserved =
+        newGameState.players.me.sun > targetSunReserved ? targetSunReserved : newGameState.players.me.sun;
+
+    return normalizedLinear({ value: sunReserved, max: targetSunReserved });
 };
 
 export const caluclateSeedUtility = (gameState: EnhancedGameState): number => {
@@ -46,15 +50,23 @@ export const caluclateSeedUtility = (gameState: EnhancedGameState): number => {
     return numOfTreesPerSize[0] === 1 ? 0 : 1;
 };
 
-export const calculateMapCellsControlledUtility = (newEnhancedGameState: EnhancedGameState): number => {
-    const myNumOfCells = Object.keys(newEnhancedGameState.players.me.trees).length;
-    const maxNumOfViableCells = newEnhancedGameState.enhancements.totalNumOfViableCells;
+export const calculateMapCellsControlledUtility = (newGameState: EnhancedGameState): number => {
+    const myNumOfCells = Object.keys(newGameState.players.me.trees).length;
+    const maxNumOfViableCells = newGameState.map.cellIndexToHexCoordinates
+        .map((coordinates) => {
+            const [q, r] = coordinates;
+            const richness = newGameState.map.richnessMatrix[r][q];
+            return richness || 0;
+        })
+        .filter((richness) => {
+            return richness !== 0;
+        }).length;
     const utility = normalizedLinear({ value: myNumOfCells, max: maxNumOfViableCells });
     return utility;
 };
 
-export const calculateAvoidCramnessUtility = (newEnhancedGameState: EnhancedGameState): number => {
-    const numOfTreesInAreasWithTrees = newEnhancedGameState.areaAnalysisList
+export const calculateAvoidCramnessUtility = (newGameState: EnhancedGameState): number => {
+    const numOfTreesInAreasWithTrees = newGameState.areaAnalysisList
         .map((areaAnalysis) => {
             return areaAnalysis.players.me.numOfTrees + areaAnalysis.players.me.numOfSeeds;
         })
@@ -72,8 +84,8 @@ export const calculateAvoidCramnessUtility = (newEnhancedGameState: EnhancedGame
     );
 };
 
-export const calculateAvoidCastingShadowOnOwnTreesUtility = (newEnhancedGameState: EnhancedGameState): number => {
-    const myTreeKeys = Object.keys(newEnhancedGameState.players.me.trees);
+export const calculateAvoidCastingShadowOnOwnTreesUtility = (newGameState: EnhancedGameState): number => {
+    const myTreeKeys = Object.keys(newGameState.players.me.trees);
     const numOfMytrees = myTreeKeys.length;
     if (numOfMytrees <= 1) {
         return 1;
@@ -85,11 +97,11 @@ export const calculateAvoidCastingShadowOnOwnTreesUtility = (newEnhancedGameStat
         [0, 1, 2, 3, 4, 5].forEach((directionID) => {
             const hexDirection = getHexDirectionByID(directionID);
             const influencedCoordinates = addHexDirection(treeCoordinates, hexDirection);
-            if (!isValidHexCoordinates(newEnhancedGameState, influencedCoordinates)) {
+            if (!isValidHexCoordinates(newGameState, influencedCoordinates)) {
                 return;
             }
             const influencedKey = hexCoordinatesToKey(influencedCoordinates);
-            if (newEnhancedGameState.players.me.trees[influencedKey]) {
+            if (newGameState.players.me.trees[influencedKey]) {
                 numOfTreesCastShadowOn += 1;
             }
         });
@@ -100,11 +112,11 @@ export const calculateAvoidCastingShadowOnOwnTreesUtility = (newEnhancedGameStat
     });
 };
 
-export const calculateAreaCoveredRichnessUtility = (newEnhancedGameState: EnhancedGameState): number => {
-    const richnessList = Object.keys(newEnhancedGameState.players.me.trees).map((treeKey) => {
+export const calculateAreaCoveredRichnessUtility = (newGameState: EnhancedGameState): number => {
+    const richnessList = Object.keys(newGameState.players.me.trees).map((treeKey) => {
         const treeCoordinates = keyToHexCoordinates(treeKey);
         const [q, r] = treeCoordinates;
-        const richness = newEnhancedGameState.map.richnessMatrix[r][q];
+        const richness = newGameState.map.richnessMatrix[r][q];
         return richness || 0;
     });
     const averageRichness = average(richnessList);
@@ -113,10 +125,10 @@ export const calculateAreaCoveredRichnessUtility = (newEnhancedGameState: Enhanc
     return normalizedLinear({ value: averageRichness, max: maxRichness });
 };
 
-export const calculateAvoidSpammingSeedsUtility = (newEnhancedGameState: EnhancedGameState): number => {
-    const numOfSeeds = Object.keys(newEnhancedGameState.players.me.trees)
+export const calculateAvoidSpammingSeedsUtility = (newGameState: EnhancedGameState): number => {
+    const numOfSeeds = Object.keys(newGameState.players.me.trees)
         .map((treeKey) => {
-            return newEnhancedGameState.players.me.trees[treeKey].size;
+            return newGameState.players.me.trees[treeKey].size;
         })
         .filter((size) => {
             return size === 0;
@@ -134,139 +146,28 @@ export const calculateAvoidSpammingSeedsUtility = (newEnhancedGameState: Enhance
     });
 };
 
-export const calculateScoreUtility = (
-    newEnhancedGameState: EnhancedGameState,
-    gameStateStatistics: GameStateStatistics
-): number => {
-    const linearRiseWeight = normalizedLinear({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS, a: 0.5 });
-    return (
-        linearRiseWeight *
-        normalizeValueBetweenZeroAndOne({
-            min: gameStateStatistics.players.me.score.min,
-            max: gameStateStatistics.players.me.score.max,
-            value: newEnhancedGameState.players.me.score,
-        })
-    );
-};
-
-export const calculateAverageSunProductionUtility = (
-    newEnhancedGameState: EnhancedGameState,
-    gameStateStatistics: GameStateStatistics
-): number => {
-    const exponentialRiseWeight = normalizedExponential({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS });
-    const logarithmicDecayWeight = 1 - exponentialRiseWeight;
-    return (
-        logarithmicDecayWeight *
-        normalizeValueBetweenZeroAndOne({
-            min: gameStateStatistics.players.me.averageSunProductionPerDay.min,
-            max: gameStateStatistics.players.me.averageSunProductionPerDay.max,
-            value: newEnhancedGameState.enhancements.players.me.averageSunProductionPerDay,
-        })
-    );
-};
-/*
-export const calculateSunStoredUtility = (
-    newEnhancedGameState: EnhancedGameState,
-    gameStateStatistics: GameStateStatistics
-): number => {
-    const linearDecayWeight = normalizedLinearDecay({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS });
-    return (
-        linearDecayWeight *
-        normalizeValueBetweenZeroAndOne({
-            min: gameStateStatistics.players.me.sun.min,
-            max: gameStateStatistics.players.me.sun.max,
-            value: newEnhancedGameState.players.me.sun,
-        })
-    );
-};
-*/
-export const calculateTotalTreeSizeUtility = (
-    newEnhancedGameState: EnhancedGameState,
-    gameStateStatistics: GameStateStatistics
-): number => {
-    const exponentialRiseWeight = normalizedExponential({
-        value: newEnhancedGameState.day,
-        max: MAX_NUM_OF_DAYS,
-        a: 5,
-    });
-    const logarithmicDecayWeight = 1 - exponentialRiseWeight;
-
-    return (
-        logarithmicDecayWeight *
-        normalizeValueBetweenZeroAndOne({
-            min: gameStateStatistics.players.me.totalTreeSize.min,
-            max: gameStateStatistics.players.me.totalTreeSize.max,
-            value: newEnhancedGameState.enhancements.players.me.totalTreeSize,
-        })
-    );
-};
-
-export const calculateInfluenceUtility = (
-    newEnhancedGameState: EnhancedGameState,
-    gameStateStatistics: GameStateStatistics
-): number => {
-    const pyramidWeight = normalizedPyramid({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS });
-    return (
-        pyramidWeight *
-        normalizeValueBetweenZeroAndOne({
-            min: gameStateStatistics.players.me.influence.min,
-            max: gameStateStatistics.players.me.influence.max,
-            value: newEnhancedGameState.enhancements.players.me.influence,
-        })
-    );
-};
-
-export const calculateExpansionUtility = (
-    newEnhancedGameState: EnhancedGameState,
-    gameStateStatistics: GameStateStatistics
-): number => {
-    const exponentialRiseWeight = normalizedExponential({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS });
-    const logarithmicDecayWeight = 1 - exponentialRiseWeight;
-    return (
-        logarithmicDecayWeight *
-        normalizeValueBetweenZeroAndOne({
-            min: gameStateStatistics.players.me.expansionsAverageSunninessPerDay.min,
-            max: gameStateStatistics.players.me.expansionsAverageSunninessPerDay.max,
-            value: newEnhancedGameState.enhancements.players.me.expansionsAverageSunninessPerDay,
-        })
-    );
-};
-
-export const calculateNoOverExtensionUtility = (
-    newEnhancedGameState: EnhancedGameState,
-    gameStateStatistics: GameStateStatistics
-): number => {
-    const weight = normalizedExponentialDecay({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS });
-    const normalizedNumOfExpansions = normalizeValueBetweenZeroAndOne({
-        min: gameStateStatistics.players.me.numOfExpansions.min,
-        max: gameStateStatistics.players.me.numOfExpansions.max,
-        value: newEnhancedGameState.enhancements.players.me.numOfExpansions,
-    });
-    return weight * (1 - normalizedNumOfExpansions);
-};
-
-export const calculateRelativeProjectedScoreAdvantageUtility = (newEnhancedGameState: EnhancedGameState): number => {
+export const calculateRelativeProjectedScoreAdvantageUtility = (newGameState: EnhancedGameState): number => {
     const totalProjectedScoreBetweenPlayers =
-        newEnhancedGameState.enhancements.players.me.projectedFinalScore +
-        newEnhancedGameState.enhancements.players.opponent.projectedFinalScore;
+        newGameState.enhancements.players.me.projectedFinalScore +
+        newGameState.enhancements.players.opponent.projectedFinalScore;
 
     const utility =
         totalProjectedScoreBetweenPlayers === 0
             ? 0.5
-            : newEnhancedGameState.enhancements.players.me.projectedFinalScore / totalProjectedScoreBetweenPlayers;
-    // const linearRiseWeight = normalizedLinear({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS });
+            : newGameState.enhancements.players.me.projectedFinalScore / totalProjectedScoreBetweenPlayers;
+    // const linearRiseWeight = normalizedLinear({ value: newGameState.day, max: MAX_NUM_OF_DAYS });
     return utility;
 };
 
-export const calculateRelativeProductionUtility = (newEnhancedGameState: EnhancedGameState): number => {
+export const calculateRelativeProductionUtility = (newGameState: EnhancedGameState): number => {
     const totalAverageProduction =
-        newEnhancedGameState.enhancements.players.me.averageSunProductionPerDay +
-        newEnhancedGameState.enhancements.players.opponent.averageSunProductionPerDay;
+        newGameState.enhancements.players.me.averageSunProductionPerDay +
+        newGameState.enhancements.players.opponent.averageSunProductionPerDay;
     const utility =
         totalAverageProduction === 0
             ? 0.5
-            : newEnhancedGameState.enhancements.players.me.averageSunProductionPerDay / totalAverageProduction;
-    // const logarithmicDecayWeight =  1 - normalizedExponential({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS, a: 3 });
-    // const linearRiseWeight = normalizedLinear({ value: newEnhancedGameState.day, max: MAX_NUM_OF_DAYS });
+            : newGameState.enhancements.players.me.averageSunProductionPerDay / totalAverageProduction;
+    // const logarithmicDecayWeight =  1 - normalizedExponential({ value: newGameState.day, max: MAX_NUM_OF_DAYS, a: 3 });
+    // const linearRiseWeight = normalizedLinear({ value: newGameState.day, max: MAX_NUM_OF_DAYS });
     return utility;
 };
