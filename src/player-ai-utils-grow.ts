@@ -1,7 +1,7 @@
-import { MAX_TREE_SIZE } from './game-config';
+import { MAX_NUM_OF_DAYS, MAX_TREE_SIZE } from './game-config';
 import { GameState } from './game-state';
 import { ShadowModifiersForWeek } from './game-state-enhancements';
-import { average, normalizedExponentialDecay, normalizedLinear } from './utility-helpers';
+import { average, normalizedExponential, normalizedExponentialDecay, normalizedLinear } from './utility-helpers';
 import { caluclatePlayerAverageSunProductionPerDay } from './player-ai-utils-common';
 
 export const calculateTreeSizeUtility = (newGameState: GameState): number => {
@@ -12,10 +12,13 @@ export const calculateTreeSizeUtility = (newGameState: GameState): number => {
     return 1 - normalizedExponentialDecay({ value: averageTreeSize, max: MAX_TREE_SIZE });
 };
 
-export const calculateSunProductionUtility = (
-    newGameState: GameState,
-    shadowModifiersForWeek: ShadowModifiersForWeek
-): number => {
+export const calculateDailySunProductionUtility = ({
+    newGameState,
+    shadowModifiersForWeek,
+}: {
+    newGameState: GameState;
+    shadowModifiersForWeek: ShadowModifiersForWeek;
+}): number => {
     const targetSunProduction = 20;
     const myAverageSunproductionPerDay = caluclatePlayerAverageSunProductionPerDay({
         playerTrees: newGameState.players.me.trees,
@@ -23,14 +26,19 @@ export const calculateSunProductionUtility = (
     });
     const production =
         myAverageSunproductionPerDay > targetSunProduction ? targetSunProduction : myAverageSunproductionPerDay;
-    const utility = normalizedLinear({ value: production, max: targetSunProduction });
+    const utility =
+        (1 - normalizedExponential({ value: newGameState.day, max: MAX_NUM_OF_DAYS, a: 3 })) *
+        normalizedLinear({ value: production, max: targetSunProduction });
     return utility;
 };
 
-export const calculateRelativeSunProductionUtility = (
-    newGameState: GameState,
-    shadowModifiersForWeek: ShadowModifiersForWeek
-): number => {
+export const calculateRelativeDailySunProductionUtility = ({
+    newGameState,
+    shadowModifiersForWeek,
+}: {
+    newGameState: GameState;
+    shadowModifiersForWeek: ShadowModifiersForWeek;
+}): number => {
     const myAverageSunproductionPerDay = caluclatePlayerAverageSunProductionPerDay({
         playerTrees: newGameState.players.me.trees,
         shadowModifiersForWeek,

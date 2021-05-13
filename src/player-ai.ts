@@ -8,7 +8,7 @@ import {
 } from './player-actions';
 import { average } from './utility-helpers';
 import { calculateProjectedScoreUtility, calculateRelativeProjectedScoreUtility } from './player-ai-utils-harvest';
-import { calculateSunProductionUtility, calculateRelativeSunProductionUtility } from './player-ai-utils-grow';
+import { calculateDailySunProductionUtility, calculateRelativeDailySunProductionUtility } from './player-ai-utils-grow';
 import {
     calculateMapCellsControlledUtility,
     calculateAvoidCramnessUtility,
@@ -18,7 +18,7 @@ import {
     caluclatePreventSeedingTooEarlyUtility,
 } from './player-ai-utils-seed';
 
-export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: string[]): string => {
+export const getNextCommandAsGameInput = (oldGameState: GameState, possibleMoves: string[]): string => {
     const groupedActions: { [key in PlayerActionType]: PlayerAction[] } = {
         [PlayerActionType.WAIT]: [],
         [PlayerActionType.COMPLETE]: [],
@@ -36,7 +36,7 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
         let chosenMove = `${PlayerActionType.WAIT}`;
         [...groupedActions[PlayerActionType.WAIT], ...groupedActions[PlayerActionType.COMPLETE]].forEach(
             (playerAction) => {
-                const clonedGameState = cloneGameState(gameState);
+                const clonedGameState = cloneGameState(oldGameState);
                 const newGameState = applyActionToGameState(clonedGameState, playerAction);
                 const shadowModifiersForWeek = getShadowModifiersForWeek(newGameState);
                 const utilities = [
@@ -61,13 +61,12 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
         let lastChosenMoveUtility = 0;
         let chosenMove = `${PlayerActionType.WAIT}`;
         [...groupedActions[PlayerActionType.WAIT], ...groupedActions[PlayerActionType.GROW]].forEach((playerAction) => {
-            const clonedGameState = cloneGameState(gameState);
+            const clonedGameState = cloneGameState(oldGameState);
             const newGameState = applyActionToGameState(clonedGameState, playerAction);
             const shadowModifiersForWeek = getShadowModifiersForWeek(newGameState);
             const utilities = [
-                //calculateTreeSizeUtility(newEnhancedGameState),
-                calculateSunProductionUtility(newGameState, shadowModifiersForWeek),
-                calculateRelativeSunProductionUtility(newGameState, shadowModifiersForWeek),
+                calculateDailySunProductionUtility({ newGameState, shadowModifiersForWeek }),
+                calculateRelativeDailySunProductionUtility({ newGameState, shadowModifiersForWeek }),
             ];
             const possibleMoveUtility = average(utilities);
             // console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
@@ -86,7 +85,7 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
         let lastChosenMoveUtility = 0;
         let chosenMove = `${PlayerActionType.WAIT}`;
         [...groupedActions[PlayerActionType.WAIT], ...groupedActions[PlayerActionType.SEED]].forEach((playerAction) => {
-            const clonedGameState = cloneGameState(gameState);
+            const clonedGameState = cloneGameState(oldGameState);
             const newGameState = applyActionToGameState(clonedGameState, playerAction);
             const areaAnalysisList = getAreaAnalysisList(newGameState);
             const utilities = [

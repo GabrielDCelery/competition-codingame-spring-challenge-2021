@@ -3,7 +3,7 @@ import { GameState, PlayerTrees } from './game-state';
 import { ShadowModifiersForWeek } from './game-state-enhancements';
 import { keyToHexCoordinates } from './hex-map-transforms';
 import { caluclatePlayerAverageSunProductionPerDay } from './player-ai-utils-common';
-import { normalizedLinear } from './utility-helpers';
+import { normalizedExponential, normalizedLinear } from './utility-helpers';
 
 const calculatePlayerProjectedFinalScore = ({
     daysLeft,
@@ -24,7 +24,7 @@ const calculatePlayerProjectedFinalScore = ({
     });
 
     let playerProjectedFinalScore = playerScore;
-    let playerSunProducedTillEndOfGame = playerAverageSunProductionPerDay * daysLeft * 0.8;
+    let playerSunProducedTillEndOfGame = playerAverageSunProductionPerDay * daysLeft * 0.7;
     let currentNutrientsModifier = 0;
 
     Object.keys(playerTrees).forEach((treeKey) => {
@@ -61,8 +61,10 @@ export const calculateProjectedScoreUtility = (
     });
     const targetMaxScore = 260;
     const myScore = myProjectedFinalScore > targetMaxScore ? targetMaxScore : myProjectedFinalScore;
-    const utility = normalizedLinear({ value: myScore, max: myProjectedFinalScore });
-    return utility;
+    return (
+        (1 - normalizedExponential({ value: newGameState.day, max: MAX_NUM_OF_DAYS, a: 3 })) *
+        normalizedLinear({ value: myScore, max: myProjectedFinalScore })
+    );
 };
 
 export const calculateRelativeProjectedScoreUtility = (
