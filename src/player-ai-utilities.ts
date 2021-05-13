@@ -16,10 +16,13 @@ import {
     normalizedLinearDecay,
 } from './utility-helpers';
 
-const caluclatePlayerAverageSunproductionPerDay = (
-    playerTrees: PlayerTrees,
-    shadowModifiersForWeek: ShadowModifiersForWeek
-): number => {
+const caluclatePlayerAverageSunproductionPerDay = ({
+    playerTrees,
+    shadowModifiersForWeek,
+}: {
+    playerTrees: PlayerTrees;
+    shadowModifiersForWeek: ShadowModifiersForWeek;
+}): number => {
     let averageSunproductionPerDay = 0;
     Object.keys(playerTrees).forEach((treeKey) => {
         const tree = playerTrees[treeKey];
@@ -41,10 +44,10 @@ export const calculateSunProductionUtility = (
     newGameState: GameState,
     shadowModifiersForWeek: ShadowModifiersForWeek
 ): number => {
-    const myAverageSunproductionPerDay = caluclatePlayerAverageSunproductionPerDay(
-        newGameState.players.me.trees,
-        shadowModifiersForWeek
-    );
+    const myAverageSunproductionPerDay = caluclatePlayerAverageSunproductionPerDay({
+        playerTrees: newGameState.players.me.trees,
+        shadowModifiersForWeek,
+    });
     const targetSunProduction = 20;
     const exponentialRiseWeight = normalizedExponential({ value: newGameState.day, max: MAX_NUM_OF_DAYS });
     const logarithmicDecayWeight = 1 - exponentialRiseWeight;
@@ -187,10 +190,10 @@ const calculatePlayerProjectedFinalScore = ({
     shadowModifiersForWeek: ShadowModifiersForWeek;
     gameState: GameState;
 }): number => {
-    const playerAverageSunProductionPerDay = caluclatePlayerAverageSunproductionPerDay(
+    const playerAverageSunProductionPerDay = caluclatePlayerAverageSunproductionPerDay({
         playerTrees,
-        shadowModifiersForWeek
-    );
+        shadowModifiersForWeek,
+    });
 
     let playerProjectedFinalScore = playerScore;
     let playerSunProducedTillEndOfGame = playerAverageSunProductionPerDay * daysLeft * 0.8;
@@ -220,22 +223,9 @@ export const calculateRelativeProjectedScoreAdvantageUtility = (
     newGameState: GameState,
     shadowModifiersForWeek: ShadowModifiersForWeek
 ): number => {
-    const myTreeKeys = Object.keys(newGameState.players.me.trees);
-    const opponentTreeKeys = Object.keys(newGameState.players.opponent.trees);
-
-    const myAverageSunproductionPerDay = caluclatePlayerAverageSunproductionPerDay(
-        newGameState.players.me.trees,
-        shadowModifiersForWeek
-    );
-
-    const opponentAverageSunproductionPerDay = caluclatePlayerAverageSunproductionPerDay(
-        newGameState.players.opponent.trees,
-        shadowModifiersForWeek
-    );
-
     const daysLeft = MAX_NUM_OF_DAYS - newGameState.day;
 
-    const myprojectedFinalScore = calculatePlayerProjectedFinalScore({
+    const myProjectedFinalScore = calculatePlayerProjectedFinalScore({
         daysLeft,
         playerScore: newGameState.players.me.score,
         playerTrees: newGameState.players.me.trees,
@@ -243,50 +233,13 @@ export const calculateRelativeProjectedScoreAdvantageUtility = (
         gameState: newGameState,
     });
 
-    let myProjectedFinalScore = newGameState.players.me.score;
-    let mySunProducedTillEndOfGame = myAverageSunproductionPerDay * daysLeft * 0.8;
-    let currentNutrientsModifier = 0;
-
-    myTreeKeys.forEach((treeKey) => {
-        const tree = newGameState.players.me.trees[treeKey];
-        if (tree.size < 3) {
-            return;
-        }
-        if (mySunProducedTillEndOfGame < 4) {
-            return;
-        }
-        const treeCoordinates = keyToHexCoordinates(treeKey);
-        const [q, r] = treeCoordinates;
-        const richness = newGameState.map.richnessMatrix[r][q] || 0;
-        myProjectedFinalScore += newGameState.nutrients + currentNutrientsModifier + richness;
-        currentNutrientsModifier -= 1;
-        mySunProducedTillEndOfGame -= 4;
+    const opponentProjectedFinalScore = calculatePlayerProjectedFinalScore({
+        daysLeft,
+        playerScore: newGameState.players.opponent.score,
+        playerTrees: newGameState.players.opponent.trees,
+        shadowModifiersForWeek,
+        gameState: newGameState,
     });
-
-    myProjectedFinalScore += mySunProducedTillEndOfGame / 3;
-
-    let opponentProjectedFinalScore = newGameState.players.opponent.score;
-    let opponentSunProducedTillEndOfGame = opponentAverageSunproductionPerDay * daysLeft * 0.8;
-
-    currentNutrientsModifier = 0;
-
-    opponentTreeKeys.forEach((treeKey) => {
-        const tree = newGameState.players.opponent.trees[treeKey];
-        if (tree.size < 3) {
-            return;
-        }
-        if (opponentSunProducedTillEndOfGame < 4) {
-            return;
-        }
-        const treeCoordinates = keyToHexCoordinates(treeKey);
-        const [q, r] = treeCoordinates;
-        const richness = newGameState.map.richnessMatrix[r][q] || 0;
-        opponentProjectedFinalScore += newGameState.nutrients + currentNutrientsModifier + richness;
-        currentNutrientsModifier -= 1;
-        opponentSunProducedTillEndOfGame -= 4;
-    });
-
-    opponentProjectedFinalScore += opponentSunProducedTillEndOfGame / 3;
 
     const totalProjectedScoreBetweenPlayers = myProjectedFinalScore + opponentProjectedFinalScore;
 
@@ -299,15 +252,15 @@ export const calculateRelativeProductionUtility = (
     newGameState: GameState,
     shadowModifiersForWeek: ShadowModifiersForWeek
 ): number => {
-    const myAverageSunproductionPerDay = caluclatePlayerAverageSunproductionPerDay(
-        newGameState.players.me.trees,
-        shadowModifiersForWeek
-    );
+    const myAverageSunproductionPerDay = caluclatePlayerAverageSunproductionPerDay({
+        playerTrees: newGameState.players.me.trees,
+        shadowModifiersForWeek,
+    });
 
-    const opponentAverageSunproductionPerDay = caluclatePlayerAverageSunproductionPerDay(
-        newGameState.players.opponent.trees,
-        shadowModifiersForWeek
-    );
+    const opponentAverageSunproductionPerDay = caluclatePlayerAverageSunproductionPerDay({
+        playerTrees: newGameState.players.opponent.trees,
+        shadowModifiersForWeek,
+    });
 
     const totalAverageProduction = myAverageSunproductionPerDay + opponentAverageSunproductionPerDay;
     const utility = totalAverageProduction === 0 ? 0.5 : myAverageSunproductionPerDay / totalAverageProduction;

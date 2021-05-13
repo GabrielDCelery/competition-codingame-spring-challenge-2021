@@ -8,7 +8,6 @@ import {
 } from './player-actions';
 import { average } from './utility-helpers';
 import {
-    calculateTreeSizeUtility,
     calculateMapCellsControlledUtility,
     calculateSunProductionUtility,
     calculateAvoidCramnessUtility,
