@@ -27,7 +27,7 @@ export const calculateSunProductionUtility = (
     return utility;
 };
 
-export const calculateRelativeProductionUtility = (
+export const calculateRelativeSunProductionUtility = (
     newGameState: GameState,
     shadowModifiersForWeek: ShadowModifiersForWeek
 ): number => {

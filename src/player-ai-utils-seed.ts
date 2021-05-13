@@ -1,5 +1,5 @@
 import { GameState, isValidHexCoordinates } from './game-state';
-import { AreaAnalysis } from './game-state-enhancements';
+import { AreaAnalysis, ShadowModifiersForWeek } from './game-state-enhancements';
 import {
     addHexDirection,
     getHexDirectionByID,
@@ -9,7 +9,7 @@ import {
 } from './hex-map-transforms';
 import { average, normalizedLinear, normalizedLinearDecay } from './utility-helpers';
 
-export const caluclateSeedUtility = (gameState: GameState): number => {
+export const caluclatePreventSeedingTooEarlyUtility = (gameState: GameState): number => {
     if (gameState.day >= 3) {
         return 1;
     }
@@ -24,15 +24,11 @@ export const caluclateSeedUtility = (gameState: GameState): number => {
 
 export const calculateMapCellsControlledUtility = (newGameState: GameState): number => {
     const myNumOfCells = Object.keys(newGameState.players.me.trees).length;
-    const maxNumOfViableCells = newGameState.map.cellIndexToHexCoordinates
-        .map((coordinates) => {
-            const [q, r] = coordinates;
-            const richness = newGameState.map.richnessMatrix[r][q];
-            return richness || 0;
-        })
-        .filter((richness) => {
-            return richness !== 0;
-        }).length;
+    const maxNumOfViableCells = newGameState.map.cellIndexToHexCoordinates.filter((coordinates) => {
+        const [q, r] = coordinates;
+        const richness = newGameState.map.richnessMatrix[r][q] || 0;
+        return richness !== 0;
+    }).length;
     const utility = normalizedLinear({ value: myNumOfCells, max: maxNumOfViableCells });
     return utility;
 };
@@ -88,7 +84,7 @@ export const calculateAvoidCastingShadowOnOwnTreesUtility = (newGameState: GameS
     });
 };
 
-export const calculateAreaCoveredRichnessUtility = (newGameState: GameState): number => {
+export const calculateRichAreasSeededUtility = (newGameState: GameState): number => {
     const richnessList = Object.keys(newGameState.players.me.trees).map((treeKey) => {
         const treeCoordinates = keyToHexCoordinates(treeKey);
         const [q, r] = treeCoordinates;
@@ -119,5 +115,22 @@ export const calculateAvoidSpammingSeedsUtility = (newGameState: GameState): num
     return normalizedLinearDecay({
         value: numOfSeeds > maxNumOfSeeds ? maxNumOfSeeds : numOfSeeds,
         max: maxNumOfSeeds,
+    });
+};
+
+export const calculateAvoidSeedsBeingInShadeUtility = (
+    newGameState: GameState,
+    shadowModifiersForWeek: ShadowModifiersForWeek
+): number => {
+    const seedKeys = Object.keys(newGameState.players.me.trees).filter((treeKey) => {
+        return newGameState.players.me.trees[treeKey].size === 0;
+    });
+    if (seedKeys.length === 0) {
+        return 0.5;
+    }
+    const averageBeingInLight = average(seedKeys.map((seedKey) => 1 - shadowModifiersForWeek[seedKey]));
+    return normalizedLinear({
+        value: averageBeingInLight,
+        max: 1,
     });
 };

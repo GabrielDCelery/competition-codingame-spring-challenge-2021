@@ -7,18 +7,15 @@ import {
     applyActionToGameState,
 } from './player-actions';
 import { average } from './utility-helpers';
-import {
-    calculateProjectedScoreUtility,
-    calculateRelativeProjectedScoreAdvantageUtility,
-} from './player-ai-utils-harvest';
-import { calculateSunProductionUtility, calculateRelativeProductionUtility } from './player-ai-utils-grow';
+import { calculateProjectedScoreUtility, calculateRelativeProjectedScoreUtility } from './player-ai-utils-harvest';
+import { calculateSunProductionUtility, calculateRelativeSunProductionUtility } from './player-ai-utils-grow';
 import {
     calculateMapCellsControlledUtility,
     calculateAvoidCramnessUtility,
     calculateAvoidSpammingSeedsUtility,
-    calculateAreaCoveredRichnessUtility,
+    calculateRichAreasSeededUtility,
     calculateAvoidCastingShadowOnOwnTreesUtility,
-    caluclateSeedUtility,
+    caluclatePreventSeedingTooEarlyUtility,
 } from './player-ai-utils-seed';
 
 export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: string[]): string => {
@@ -44,7 +41,7 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
                 const shadowModifiersForWeek = getShadowModifiersForWeek(newGameState);
                 const utilities = [
                     calculateProjectedScoreUtility(newGameState, shadowModifiersForWeek),
-                    calculateRelativeProjectedScoreAdvantageUtility(newGameState, shadowModifiersForWeek),
+                    calculateRelativeProjectedScoreUtility(newGameState, shadowModifiersForWeek),
                 ];
                 const possibleMoveUtility = average(utilities);
                 // console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
@@ -70,7 +67,7 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
             const utilities = [
                 //calculateTreeSizeUtility(newEnhancedGameState),
                 calculateSunProductionUtility(newGameState, shadowModifiersForWeek),
-                calculateRelativeProductionUtility(newGameState, shadowModifiersForWeek),
+                calculateRelativeSunProductionUtility(newGameState, shadowModifiersForWeek),
             ];
             const possibleMoveUtility = average(utilities);
             // console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
@@ -93,12 +90,12 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
             const newGameState = applyActionToGameState(clonedGameState, playerAction);
             const areaAnalysisList = getAreaAnalysisList(newGameState);
             const utilities = [
-                caluclateSeedUtility(newGameState),
+                caluclatePreventSeedingTooEarlyUtility(newGameState),
                 calculateMapCellsControlledUtility(newGameState),
                 calculateAvoidCramnessUtility(newGameState, areaAnalysisList),
                 calculateAvoidSpammingSeedsUtility(newGameState),
                 calculateAvoidCastingShadowOnOwnTreesUtility(newGameState),
-                calculateAreaCoveredRichnessUtility(newGameState),
+                calculateRichAreasSeededUtility(newGameState),
             ];
             const possibleMoveUtility = average(utilities);
             // console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);

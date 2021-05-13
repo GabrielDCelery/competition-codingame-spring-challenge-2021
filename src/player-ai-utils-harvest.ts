@@ -65,7 +65,7 @@ export const calculateProjectedScoreUtility = (
     return utility;
 };
 
-export const calculateRelativeProjectedScoreAdvantageUtility = (
+export const calculateRelativeProjectedScoreUtility = (
     newGameState: GameState,
     shadowModifiersForWeek: ShadowModifiersForWeek
 ): number => {
