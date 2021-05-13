@@ -7,15 +7,17 @@ import {
     hexCoordinatesToKey,
 } from './hex-map-transforms';
 
-type TreeState = {
+export type TreeState = {
     size: number;
     isDormant: boolean;
 };
 
-type PlayerState = {
+export type PlayerTrees = { [index: string]: TreeState };
+
+export type PlayerState = {
     sun: number;
     score: number;
-    trees: { [index: string]: TreeState };
+    trees: PlayerTrees;
     isWaiting: boolean;
 };
 
