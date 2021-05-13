@@ -7,17 +7,16 @@ import {
     applyActionToGameState,
 } from './player-actions';
 import { average } from './utility-helpers';
+import { calculateRelativeProjectedScoreAdvantageUtility } from './player-ai-utils-harvest';
+import { calculateSunProductionUtility, calculateRelativeProductionUtility } from './player-ai-utils-grow';
 import {
     calculateMapCellsControlledUtility,
-    calculateSunProductionUtility,
     calculateAvoidCramnessUtility,
-    calculateRelativeProductionUtility,
-    calculateRelativeProjectedScoreAdvantageUtility,
     calculateAvoidSpammingSeedsUtility,
     calculateAreaCoveredRichnessUtility,
     calculateAvoidCastingShadowOnOwnTreesUtility,
     caluclateSeedUtility,
-} from './player-ai-utilities';
+} from './player-ai-utils-seed';
 
 export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: string[]): string => {
     const groupedActions: { [key in PlayerActionType]: PlayerAction[] } = {
