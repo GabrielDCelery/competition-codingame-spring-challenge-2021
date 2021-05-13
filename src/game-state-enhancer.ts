@@ -170,7 +170,8 @@ export const enhanceGameState = (newGameState: GameState): EnhancedGameState => 
 
     const daysLeft = MAX_NUM_OF_DAYS - newGameState.day;
     enhancedGameState.enhancements.players.me.projectedFinalScore += newGameState.players.me.score;
-    let mySunProducedTillEndOfGame = enhancedGameState.enhancements.players.me.averageSunProductionPerDay * daysLeft;
+    let mySunProducedTillEndOfGame =
+        enhancedGameState.enhancements.players.me.averageSunProductionPerDay * daysLeft * 0.8;
 
     let currentNutrientsModifier = 0;
 
@@ -195,7 +196,7 @@ export const enhanceGameState = (newGameState: GameState): EnhancedGameState => 
 
     enhancedGameState.enhancements.players.opponent.projectedFinalScore += newGameState.players.opponent.score;
     let opponentSunProducedTillEndOfGame =
-        enhancedGameState.enhancements.players.opponent.averageSunProductionPerDay * daysLeft;
+        enhancedGameState.enhancements.players.opponent.averageSunProductionPerDay * daysLeft * 0.8;
 
     currentNutrientsModifier = 0;
 

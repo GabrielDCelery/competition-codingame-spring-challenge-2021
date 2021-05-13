@@ -1,7 +1,13 @@
 import { MAX_NUM_OF_DAYS, MAX_TREE_SIZE } from './game-config';
 import { isValidHexCoordinates } from './game-state';
 import { EnhancedGameState } from './game-state-enhancer';
-import { addHexDirection, getHexDirectionByID, hexCoordinatesToKey, keyToHexCoordinates } from './hex-map-transforms';
+import {
+    addHexDirection,
+    getHexDirectionByID,
+    hexCoordinatesToKey,
+    keyToHexCoordinates,
+    scaleHexDirection,
+} from './hex-map-transforms';
 import {
     average,
     normalizedExponential,
@@ -92,17 +98,21 @@ export const calculateAvoidCastingShadowOnOwnTreesUtility = (newGameState: Enhan
     }
     const maxNumOfShadowsCast = numOfMytrees * (numOfMytrees - 1);
     let numOfTreesCastShadowOn = 0;
+    const maxScale = 3;
     myTreeKeys.forEach((treeKey) => {
         const treeCoordinates = keyToHexCoordinates(treeKey);
         [0, 1, 2, 3, 4, 5].forEach((directionID) => {
             const hexDirection = getHexDirectionByID(directionID);
-            const influencedCoordinates = addHexDirection(treeCoordinates, hexDirection);
-            if (!isValidHexCoordinates(newGameState, influencedCoordinates)) {
-                return;
-            }
-            const influencedKey = hexCoordinatesToKey(influencedCoordinates);
-            if (newGameState.players.me.trees[influencedKey]) {
-                numOfTreesCastShadowOn += 1;
+            for (let scale = 1; scale <= maxScale; scale++) {
+                const scaledHexDirection = scaleHexDirection(hexDirection, scale);
+                const influencedCoordinates = addHexDirection(treeCoordinates, scaledHexDirection);
+                if (!isValidHexCoordinates(newGameState, influencedCoordinates)) {
+                    return;
+                }
+                const influencedKey = hexCoordinatesToKey(influencedCoordinates);
+                if (newGameState.players.me.trees[influencedKey]) {
+                    numOfTreesCastShadowOn += 1;
+                }
             }
         });
     });
@@ -147,12 +157,14 @@ export const calculateAvoidSpammingSeedsUtility = (newGameState: EnhancedGameSta
 };
 
 export const calculateRelativeProjectedScoreAdvantageUtility = (newGameState: EnhancedGameState): number => {
+    /*
     console.error(
         JSON.stringify([
             newGameState.enhancements.players.me.projectedFinalScore,
             newGameState.enhancements.players.opponent.projectedFinalScore,
         ])
     );
+    */
     const totalProjectedScoreBetweenPlayers =
         newGameState.enhancements.players.me.projectedFinalScore +
         newGameState.enhancements.players.opponent.projectedFinalScore;
