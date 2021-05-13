@@ -114,8 +114,8 @@ describe('Custom', () => {
             'SEED 32 31',
         ];
 
-        const result = getNextCommandAsGameInput(gameState, possibleMoves);
+        getNextCommandAsGameInput(gameState, possibleMoves);
 
-        console.log(result);
+        expect(true).to.deep.equal(true);
     });
 });

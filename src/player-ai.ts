@@ -7,7 +7,10 @@ import {
     applyActionToGameState,
 } from './player-actions';
 import { average } from './utility-helpers';
-import { calculateRelativeProjectedScoreAdvantageUtility } from './player-ai-utils-harvest';
+import {
+    calculateProjectedScoreUtility,
+    calculateRelativeProjectedScoreAdvantageUtility,
+} from './player-ai-utils-harvest';
 import { calculateSunProductionUtility, calculateRelativeProductionUtility } from './player-ai-utils-grow';
 import {
     calculateMapCellsControlledUtility,
@@ -40,6 +43,7 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
                 const newGameState = applyActionToGameState(clonedGameState, playerAction);
                 const shadowModifiersForWeek = getShadowModifiersForWeek(newGameState);
                 const utilities = [
+                    calculateProjectedScoreUtility(newGameState, shadowModifiersForWeek),
                     calculateRelativeProjectedScoreAdvantageUtility(newGameState, shadowModifiersForWeek),
                 ];
                 const possibleMoveUtility = average(utilities);

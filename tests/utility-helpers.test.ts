@@ -8,7 +8,6 @@ import {
     standardDeviation,
     mean,
     standardValue,
-    normalizeValueBetweenZeroAndOne,
 } from '../src/utility-helpers';
 
 describe('UtilityHelpers', () => {
@@ -64,8 +63,6 @@ describe('UtilityHelpers', () => {
             const values = [0, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 1];
             const m = mean(values);
             const standDev = standardDeviation(values);
-
-            console.log(standDev);
 
             const standardValues = values.map((value) => {
                 return standardValue({

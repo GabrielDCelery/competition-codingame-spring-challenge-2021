@@ -1,9 +1,7 @@
-import { MAX_NUM_OF_DAYS, MAX_TREE_SIZE } from './game-config';
+import { MAX_TREE_SIZE } from './game-config';
 import { GameState } from './game-state';
 import { ShadowModifiersForWeek } from './game-state-enhancements';
-
-import { average, normalizedExponential, normalizedExponentialDecay, normalizedLinear } from './utility-helpers';
-
+import { average, normalizedExponentialDecay, normalizedLinear } from './utility-helpers';
 import { caluclatePlayerAverageSunProductionPerDay } from './player-ai-utils-common';
 
 export const calculateTreeSizeUtility = (newGameState: GameState): number => {
@@ -18,16 +16,15 @@ export const calculateSunProductionUtility = (
     newGameState: GameState,
     shadowModifiersForWeek: ShadowModifiersForWeek
 ): number => {
+    const targetSunProduction = 20;
     const myAverageSunproductionPerDay = caluclatePlayerAverageSunProductionPerDay({
         playerTrees: newGameState.players.me.trees,
         shadowModifiersForWeek,
     });
-    const targetSunProduction = 20;
-    const exponentialRiseWeight = normalizedExponential({ value: newGameState.day, max: MAX_NUM_OF_DAYS });
-    const logarithmicDecayWeight = 1 - exponentialRiseWeight;
     const production =
         myAverageSunproductionPerDay > targetSunProduction ? targetSunProduction : myAverageSunproductionPerDay;
-    return logarithmicDecayWeight * normalizedLinear({ value: production, max: targetSunProduction });
+    const utility = normalizedLinear({ value: production, max: targetSunProduction });
+    return utility;
 };
 
 export const calculateRelativeProductionUtility = (

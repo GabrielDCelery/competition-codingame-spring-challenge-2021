@@ -113,7 +113,7 @@ export const calculateAvoidSpammingSeedsUtility = (newGameState: GameState): num
     const maxNumOfSeeds = 5;
 
     if (numOfSeeds === 0) {
-        return 0;
+        return 0.5;
     }
 
     return normalizedLinearDecay({
