@@ -1,5 +1,5 @@
 import { GameState, isValidHexCoordinates } from './game-state';
-import { AreaAnalysis, ShadowModifiersForWeek } from './game-state-enhancements';
+import { AreaAnalysis } from './game-state-enhancements';
 import {
     addHexDirection,
     getHexDirectionByID,
@@ -52,7 +52,7 @@ export const calculateAvoidCramnessUtility = (newGameState: GameState, areaAnaly
     );
 };
 
-export const calculateAvoidCastingShadowOnOwnTreesUtility = (newGameState: GameState): number => {
+export const calculateAvoidCastingShadowOnOwnTreesUtility = (newGameState: GameState, treeSize: number): number => {
     const myTreeKeys = Object.keys(newGameState.players.me.trees);
     const numOfMytrees = myTreeKeys.length;
     if (numOfMytrees <= 1) {
@@ -60,7 +60,7 @@ export const calculateAvoidCastingShadowOnOwnTreesUtility = (newGameState: GameS
     }
     const maxNumOfShadowsCast = numOfMytrees * (numOfMytrees - 1);
     let numOfTreesCastShadowOn = 0;
-    const maxScale = 3;
+    const maxScale = treeSize;
     myTreeKeys.forEach((treeKey) => {
         const treeCoordinates = keyToHexCoordinates(treeKey);
         [0, 1, 2, 3, 4, 5].forEach((directionID) => {
@@ -117,20 +117,36 @@ export const calculateAvoidSpammingSeedsUtility = (newGameState: GameState): num
         max: maxNumOfSeeds,
     });
 };
-
-export const calculateAvoidSeedsBeingInShadeUtility = (
-    newGameState: GameState,
-    shadowModifiersForWeek: ShadowModifiersForWeek
-): number => {
-    const seedKeys = Object.keys(newGameState.players.me.trees).filter((treeKey) => {
-        return newGameState.players.me.trees[treeKey].size === 0;
-    });
-    if (seedKeys.length === 0) {
-        return 0.5;
+/*
+export const calculatePreferCastingShadowOnEnemyTreesUtility = (newGameState: GameState): number => {
+    const myTreeKeys = Object.keys(newGameState.players.me.trees);
+    const numOfMytrees = myTreeKeys.length;
+    if (numOfMytrees <= 1) {
+        return 1;
     }
-    const averageBeingInLight = average(seedKeys.map((seedKey) => 1 - shadowModifiersForWeek[seedKey]));
-    return normalizedLinear({
-        value: averageBeingInLight,
-        max: 1,
+    let totalNumOfShadowsCastByMe = 0;
+    let numOfTreesCastShadowOn = 0;
+    const maxScale = 3;
+    myTreeKeys.forEach((treeKey) => {
+        const treeCoordinates = keyToHexCoordinates(treeKey);
+        [0, 1, 2, 3, 4, 5].forEach((directionID) => {
+            const hexDirection = getHexDirectionByID(directionID);
+            for (let scale = 1; scale <= maxScale; scale++) {
+                const scaledHexDirection = scaleHexDirection(hexDirection, scale);
+                const influencedCoordinates = addHexDirection(treeCoordinates, scaledHexDirection);
+                if (!isValidHexCoordinates(newGameState, influencedCoordinates)) {
+                    return;
+                }
+                const influencedKey = hexCoordinatesToKey(influencedCoordinates);
+                if (newGameState.players.me.trees[influencedKey]) {
+                    numOfTreesCastShadowOn += 1;
+                }
+            }
+        });
+    });
+    return normalizedLinearDecay({
+        value: numOfTreesCastShadowOn,
+        max: maxNumOfShadowsCast,
     });
 };
+*/

@@ -94,7 +94,7 @@ export const getNextCommandAsGameInput = (gameState: GameState, possibleMoves: s
                 calculateMapCellsControlledUtility(newGameState),
                 calculateAvoidCramnessUtility(newGameState, areaAnalysisList),
                 calculateAvoidSpammingSeedsUtility(newGameState),
-                calculateAvoidCastingShadowOnOwnTreesUtility(newGameState),
+                calculateAvoidCastingShadowOnOwnTreesUtility(newGameState, 3),
                 calculateRichAreasSeededUtility(newGameState),
             ];
             const possibleMoveUtility = average(utilities);
