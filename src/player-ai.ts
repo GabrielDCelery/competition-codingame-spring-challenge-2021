@@ -16,6 +16,7 @@ import {
     calculateRichAreasSeededUtility,
     calculateAvoidCastingShadowOnOwnTreesUtility,
     caluclatePreventSeedingTooEarlyUtility,
+    caluclatePreventSeedingAtTheEndOfGameUtility,
 } from './player-ai-utils-seed';
 
 export const getNextCommandAsGameInput = (oldGameState: GameState, possibleMoves: string[]): string => {
@@ -90,6 +91,7 @@ export const getNextCommandAsGameInput = (oldGameState: GameState, possibleMoves
             const areaAnalysisList = getAreaAnalysisList(newGameState);
             const utilities = [
                 caluclatePreventSeedingTooEarlyUtility(newGameState),
+                caluclatePreventSeedingAtTheEndOfGameUtility(newGameState),
                 calculateMapCellsControlledUtility(newGameState),
                 calculateAvoidCramnessUtility(newGameState, areaAnalysisList),
                 calculateAvoidSpammingSeedsUtility(newGameState),

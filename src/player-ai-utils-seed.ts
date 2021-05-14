@@ -1,3 +1,4 @@
+import { MAX_NUM_OF_DAYS } from './game-config';
 import { GameState, isValidHexCoordinates } from './game-state';
 import { AreaAnalysis } from './game-state-enhancements';
 import {
@@ -14,12 +15,16 @@ export const caluclatePreventSeedingTooEarlyUtility = (gameState: GameState): nu
         return 1;
     }
 
-    const numOfTreesPerSize = [0, 0, 0, 0];
-    Object.keys(gameState.players.me.trees).forEach((treeKey) => {
-        const tree = gameState.players.me.trees[treeKey];
-        numOfTreesPerSize[tree.size] += 1;
-    });
-    return numOfTreesPerSize[0] === 1 ? 0 : 1;
+    return -Infinity;
+};
+
+export const caluclatePreventSeedingAtTheEndOfGameUtility = (gameState: GameState): number => {
+    const daysLeft = MAX_NUM_OF_DAYS - gameState.day;
+    if (daysLeft >= 5) {
+        return 1;
+    }
+
+    return -Infinity;
 };
 
 export const calculateMapCellsControlledUtility = (newGameState: GameState): number => {
