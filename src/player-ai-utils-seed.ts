@@ -11,7 +11,7 @@ import {
 import { average, normalizedLinear, normalizedLinearDecay } from './utility-helpers';
 
 export const caluclatePreventSeedingTooEarlyUtility = (gameState: GameState): number => {
-    if (gameState.day >= 3) {
+    if (gameState.day >= 2) {
         return 1;
     }
 
@@ -20,7 +20,7 @@ export const caluclatePreventSeedingTooEarlyUtility = (gameState: GameState): nu
 
 export const caluclatePreventSeedingAtTheEndOfGameUtility = (gameState: GameState): number => {
     const daysLeft = MAX_NUM_OF_DAYS - gameState.day;
-    if (daysLeft >= 5) {
+    if (daysLeft >= 4) {
         return 1;
     }
 
@@ -122,36 +122,3 @@ export const calculateAvoidSpammingSeedsUtility = (newGameState: GameState): num
         max: maxNumOfSeeds,
     });
 };
-/*
-export const calculatePreferCastingShadowOnEnemyTreesUtility = (newGameState: GameState): number => {
-    const myTreeKeys = Object.keys(newGameState.players.me.trees);
-    const numOfMytrees = myTreeKeys.length;
-    if (numOfMytrees <= 1) {
-        return 1;
-    }
-    let totalNumOfShadowsCastByMe = 0;
-    let numOfTreesCastShadowOn = 0;
-    const maxScale = 3;
-    myTreeKeys.forEach((treeKey) => {
-        const treeCoordinates = keyToHexCoordinates(treeKey);
-        [0, 1, 2, 3, 4, 5].forEach((directionID) => {
-            const hexDirection = getHexDirectionByID(directionID);
-            for (let scale = 1; scale <= maxScale; scale++) {
-                const scaledHexDirection = scaleHexDirection(hexDirection, scale);
-                const influencedCoordinates = addHexDirection(treeCoordinates, scaledHexDirection);
-                if (!isValidHexCoordinates(newGameState, influencedCoordinates)) {
-                    return;
-                }
-                const influencedKey = hexCoordinatesToKey(influencedCoordinates);
-                if (newGameState.players.me.trees[influencedKey]) {
-                    numOfTreesCastShadowOn += 1;
-                }
-            }
-        });
-    });
-    return normalizedLinearDecay({
-        value: numOfTreesCastShadowOn,
-        max: maxNumOfShadowsCast,
-    });
-};
-*/

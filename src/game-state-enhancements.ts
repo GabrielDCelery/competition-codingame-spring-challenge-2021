@@ -7,6 +7,56 @@ import {
     scaleHexDirection,
 } from './hex-map-transforms';
 
+export type TreesInShadowMap = { [index: string]: true };
+
+export const getTreesInShadowMapForDay = ({
+    gameState,
+    day,
+}: {
+    gameState: GameState;
+    day: number;
+}): TreesInShadowMap => {
+    const treesInShadowMap: TreesInShadowMap = {};
+    const directionID = day % 6;
+    const treeKeys = [...Object.keys(gameState.players.me.trees), ...Object.keys(gameState.players.opponent.trees)];
+    treeKeys.forEach((treeKey) => {
+        const treeCastingShadow = gameState.players.me.trees[treeKey] || gameState.players.opponent.trees[treeKey];
+        const treeCastingShadowSize = treeCastingShadow.size;
+        if (treeCastingShadowSize === 0) {
+            return;
+        }
+        const treeCoordinates = keyToHexCoordinates(treeKey);
+        const hexDirection = getHexDirectionByID(directionID);
+        const maxScale = treeCastingShadow.size;
+        for (let scale = 1; scale <= maxScale; scale++) {
+            const scaledHexDirection = scaleHexDirection(hexDirection, scale);
+            const shadowCoordinates = addHexDirection(treeCoordinates, scaledHexDirection);
+
+            if (!isValidHexCoordinates(gameState, shadowCoordinates)) {
+                break;
+            }
+
+            const shadowCastOnTreeKey = hexCoordinatesToKey(shadowCoordinates);
+            const treeBeingCastShadowOn =
+                gameState.players.me.trees[shadowCastOnTreeKey] ||
+                gameState.players.opponent.trees[shadowCastOnTreeKey];
+
+            if (!treeBeingCastShadowOn) {
+                continue;
+            }
+
+            const treeBeingCastShadowOnSize = treeBeingCastShadowOn.size;
+
+            if (treeCastingShadowSize < treeBeingCastShadowOnSize) {
+                continue;
+            }
+
+            treesInShadowMap[shadowCastOnTreeKey] = true;
+        }
+    });
+    return treesInShadowMap;
+};
+
 export type ShadowModifiersForWeek = { [index: string]: number };
 
 export const getShadowModifiersForWeek = (gameState: GameState): ShadowModifiersForWeek => {

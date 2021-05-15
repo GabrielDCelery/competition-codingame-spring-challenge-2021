@@ -27,12 +27,10 @@ export const convertGameInputStringToAction = (possibleMove: string): PlayerActi
 };
 
 export const applyWaitActionToGameState = (gameState: GameState): GameState => {
-    gameState.day += 1;
     return gameState;
 };
 
 export const applyHarvestActionToGameState = (gameState: GameState, sourceCellID: number): GameState => {
-    gameState.day += 1;
     const treeCoordinates = gameState.map.cellIndexToHexCoordinates[sourceCellID];
     const [q, r] = treeCoordinates;
     const richness = gameState.map.richnessMatrix[r][q];
@@ -44,7 +42,6 @@ export const applyHarvestActionToGameState = (gameState: GameState, sourceCellID
 };
 
 export const applyGrowActionToGameState = (gameState: GameState, sourceCellID: number): GameState => {
-    gameState.day += 1;
     const treeCoordinates = gameState.map.cellIndexToHexCoordinates[sourceCellID];
     const treeKey = hexCoordinatesToKey(treeCoordinates);
     const targetSize = gameState.players.me.trees[treeKey].size + 1;
@@ -61,7 +58,6 @@ export const applySeedActionToGameState = (
     sourceCellID: number,
     targetCellID: number
 ): GameState => {
-    gameState.day += 1;
     const sourceTreeCoordinates = gameState.map.cellIndexToHexCoordinates[sourceCellID];
     const targetCoordinates = gameState.map.cellIndexToHexCoordinates[targetCellID];
     const sourceTreeKey = hexCoordinatesToKey(sourceTreeCoordinates);

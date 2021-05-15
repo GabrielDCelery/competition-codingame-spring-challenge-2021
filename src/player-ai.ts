@@ -8,7 +8,7 @@ import {
 } from './player-actions';
 import { average } from './utility-helpers';
 import { calculateProjectedScoreUtility, calculateRelativeProjectedScoreUtility } from './player-ai-utils-harvest';
-import { calculateDailySunProductionUtility, calculateRelativeDailySunProductionUtility } from './player-ai-utils-grow';
+import { calculateRelativeSunProducedForNextXDays, preferGrowingTreesInRichSoil } from './player-ai-utils-grow';
 import {
     calculateMapCellsControlledUtility,
     calculateAvoidCramnessUtility,
@@ -45,7 +45,8 @@ export const getNextCommandAsGameInput = (oldGameState: GameState, possibleMoves
                     calculateRelativeProjectedScoreUtility(newGameState, shadowModifiersForWeek),
                 ];
                 const possibleMoveUtility = average(utilities);
-                // console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
+
+                //  console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
                 if (possibleMoveUtility <= lastChosenMoveUtility) {
                     return;
                 }
@@ -64,10 +65,11 @@ export const getNextCommandAsGameInput = (oldGameState: GameState, possibleMoves
         [...groupedActions[PlayerActionType.WAIT], ...groupedActions[PlayerActionType.GROW]].forEach((playerAction) => {
             const clonedGameState = cloneGameState(oldGameState);
             const newGameState = applyActionToGameState(clonedGameState, playerAction);
-            const shadowModifiersForWeek = getShadowModifiersForWeek(newGameState);
+            //  const shadowModifiersForWeek = getShadowModifiersForWeek(newGameState);
             const utilities = [
-                calculateDailySunProductionUtility({ newGameState, shadowModifiersForWeek }),
-                calculateRelativeDailySunProductionUtility({ newGameState, shadowModifiersForWeek }),
+                calculateRelativeSunProducedForNextXDays({ newGameState, nextXDays: 3 }),
+                calculateRelativeSunProducedForNextXDays({ newGameState, nextXDays: 6 }),
+                preferGrowingTreesInRichSoil({ newGameState }),
             ];
             const possibleMoveUtility = average(utilities);
             // console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);

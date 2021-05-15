@@ -3,7 +3,7 @@ import { GameState, PlayerTrees } from './game-state';
 import { ShadowModifiersForWeek } from './game-state-enhancements';
 import { keyToHexCoordinates } from './hex-map-transforms';
 import { caluclatePlayerAverageSunProductionPerDay } from './player-ai-utils-common';
-import { normalizedExponential, normalizedLinear } from './utility-helpers';
+import { normalizedLinear } from './utility-helpers';
 
 const calculatePlayerProjectedFinalScore = ({
     daysLeft,
@@ -61,10 +61,7 @@ export const calculateProjectedScoreUtility = (
     });
     const targetMaxScore = 260;
     const myScore = myProjectedFinalScore > targetMaxScore ? targetMaxScore : myProjectedFinalScore;
-    return (
-        (1 - normalizedExponential({ value: newGameState.day, max: MAX_NUM_OF_DAYS, a: 3 })) *
-        normalizedLinear({ value: myScore, max: myProjectedFinalScore })
-    );
+    return normalizedLinear({ value: myScore, max: targetMaxScore });
 };
 
 export const calculateRelativeProjectedScoreUtility = (
@@ -88,7 +85,7 @@ export const calculateRelativeProjectedScoreUtility = (
         shadowModifiersForWeek,
         gameState: newGameState,
     });
-
+    // console.error(`${myProjectedFinalScore} - ${opponentProjectedFinalScore}`);
     const totalProjectedScoreBetweenPlayers = myProjectedFinalScore + opponentProjectedFinalScore;
 
     const utility =
