@@ -10,16 +10,16 @@ import {
 } from './hex-map-transforms';
 import { average, normalizedLinear, normalizedLinearDecay } from './utility-helpers';
 
-export const caluclatePreventSeedingTooEarlyUtility = (gameState: GameState): number => {
-    if (gameState.day >= 2) {
+export const caluclatePreventSeedingTooEarlyUtility = ({ newGameState }: { newGameState: GameState }): number => {
+    if (newGameState.day >= 2) {
         return 1;
     }
 
     return -Infinity;
 };
 
-export const caluclatePreventSeedingAtTheEndOfGameUtility = (gameState: GameState): number => {
-    const daysLeft = MAX_NUM_OF_DAYS - gameState.day;
+export const caluclatePreventSeedingAtTheEndOfGameUtility = ({ newGameState }: { newGameState: GameState }): number => {
+    const daysLeft = MAX_NUM_OF_DAYS - newGameState.day;
     if (daysLeft >= 4) {
         return 1;
     }
@@ -27,7 +27,7 @@ export const caluclatePreventSeedingAtTheEndOfGameUtility = (gameState: GameStat
     return -Infinity;
 };
 
-export const calculateMapCellsControlledUtility = (newGameState: GameState): number => {
+export const calculateMapCellsControlledUtility = ({ newGameState }: { newGameState: GameState }): number => {
     const myNumOfCells = Object.keys(newGameState.players.me.trees).length;
     const maxNumOfViableCells = newGameState.map.cellIndexToHexCoordinates.filter((coordinates) => {
         const [q, r] = coordinates;
@@ -38,7 +38,12 @@ export const calculateMapCellsControlledUtility = (newGameState: GameState): num
     return utility;
 };
 
-export const calculateAvoidCramnessUtility = (newGameState: GameState, areaAnalysisList: AreaAnalysis[]): number => {
+export const calculateAvoidCramnessUtility = ({
+    areaAnalysisList,
+}: {
+    newGameState: GameState;
+    areaAnalysisList: AreaAnalysis[];
+}): number => {
     const numOfTreesInAreasWithTrees = areaAnalysisList
         .map((areaAnalysis) => {
             return areaAnalysis.players.me.numOfTrees + areaAnalysis.players.me.numOfSeeds;
@@ -89,7 +94,7 @@ export const calculateAvoidCastingShadowOnOwnTreesUtility = (newGameState: GameS
     });
 };
 
-export const calculateRichAreasSeededUtility = (newGameState: GameState): number => {
+export const calculateRichAreasSeededUtility = ({ newGameState }: { newGameState: GameState }): number => {
     const richnessList = Object.keys(newGameState.players.me.trees).map((treeKey) => {
         const treeCoordinates = keyToHexCoordinates(treeKey);
         const [q, r] = treeCoordinates;
@@ -102,7 +107,7 @@ export const calculateRichAreasSeededUtility = (newGameState: GameState): number
     return normalizedLinear({ value: averageRichness, max: maxRichness });
 };
 
-export const calculateAvoidSpammingSeedsUtility = (newGameState: GameState): number => {
+export const calculateAvoidSpammingSeedsUtility = ({ newGameState }: { newGameState: GameState }): number => {
     const numOfSeeds = Object.keys(newGameState.players.me.trees)
         .map((treeKey) => {
             return newGameState.players.me.trees[treeKey].size;

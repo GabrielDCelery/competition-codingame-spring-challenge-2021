@@ -7,8 +7,13 @@ import {
     applyActionToGameState,
 } from './player-actions';
 import { average } from './utility-helpers';
-import { calculateProjectedScoreUtility, calculateRelativeProjectedScoreUtility } from './player-ai-utils-harvest';
-import { calculateRelativeSunProducedForNextXDays, preferGrowingTreesInRichSoil } from './player-ai-utils-grow';
+import { calculateRelativeProjectedScoreUtility } from './player-ai-utils-harvest';
+import {
+    calculateRelativeSunProducedForHalfCycleUtility,
+    calculateRelativeSunProducedForFullCycleUtility,
+    calculatePreferGrowingTreesInRichSoilUtility,
+    calculateStopGrowingTreesAtTheEndUtility,
+} from './player-ai-utils-grow';
 import {
     calculateMapCellsControlledUtility,
     calculateAvoidCramnessUtility,
@@ -40,13 +45,8 @@ export const getNextCommandAsGameInput = (oldGameState: GameState, possibleMoves
                 const clonedGameState = cloneGameState(oldGameState);
                 const newGameState = applyActionToGameState(clonedGameState, playerAction);
                 const shadowModifiersForWeek = getShadowModifiersForWeek(newGameState);
-                const utilities = [
-                    calculateProjectedScoreUtility(newGameState, shadowModifiersForWeek),
-                    calculateRelativeProjectedScoreUtility(newGameState, shadowModifiersForWeek),
-                ];
+                const utilities = [calculateRelativeProjectedScoreUtility({ newGameState, shadowModifiersForWeek })];
                 const possibleMoveUtility = average(utilities);
-
-                //  console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
                 if (possibleMoveUtility <= lastChosenMoveUtility) {
                     return;
                 }
@@ -67,12 +67,12 @@ export const getNextCommandAsGameInput = (oldGameState: GameState, possibleMoves
             const newGameState = applyActionToGameState(clonedGameState, playerAction);
             //  const shadowModifiersForWeek = getShadowModifiersForWeek(newGameState);
             const utilities = [
-                calculateRelativeSunProducedForNextXDays({ newGameState, nextXDays: 3 }),
-                calculateRelativeSunProducedForNextXDays({ newGameState, nextXDays: 6 }),
-                preferGrowingTreesInRichSoil({ newGameState }),
+                calculateRelativeSunProducedForHalfCycleUtility({ newGameState }),
+                calculateRelativeSunProducedForFullCycleUtility({ newGameState }),
+                calculatePreferGrowingTreesInRichSoilUtility({ newGameState }),
+                calculateStopGrowingTreesAtTheEndUtility({ newGameState }),
             ];
             const possibleMoveUtility = average(utilities);
-            // console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
             if (possibleMoveUtility <= lastChosenMoveUtility) {
                 return;
             }
@@ -92,16 +92,15 @@ export const getNextCommandAsGameInput = (oldGameState: GameState, possibleMoves
             const newGameState = applyActionToGameState(clonedGameState, playerAction);
             const areaAnalysisList = getAreaAnalysisList(newGameState);
             const utilities = [
-                caluclatePreventSeedingTooEarlyUtility(newGameState),
-                caluclatePreventSeedingAtTheEndOfGameUtility(newGameState),
-                calculateMapCellsControlledUtility(newGameState),
-                calculateAvoidCramnessUtility(newGameState, areaAnalysisList),
-                calculateAvoidSpammingSeedsUtility(newGameState),
+                caluclatePreventSeedingTooEarlyUtility({ newGameState }),
+                caluclatePreventSeedingAtTheEndOfGameUtility({ newGameState }),
+                calculateMapCellsControlledUtility({ newGameState }),
+                calculateAvoidCramnessUtility({ newGameState, areaAnalysisList }),
+                calculateAvoidSpammingSeedsUtility({ newGameState }),
                 calculateAvoidCastingShadowOnOwnTreesUtility(newGameState, 3),
-                calculateRichAreasSeededUtility(newGameState),
+                calculateRichAreasSeededUtility({ newGameState }),
             ];
             const possibleMoveUtility = average(utilities);
-            // console.error(`${playerAction.possibleMove} - ${possibleMoveUtility} - ${JSON.stringify(utilities)}`);
             if (possibleMoveUtility <= lastChosenMoveUtility) {
                 return;
             }

@@ -3,7 +3,6 @@ import { GameState, PlayerTrees } from './game-state';
 import { ShadowModifiersForWeek } from './game-state-enhancements';
 import { keyToHexCoordinates } from './hex-map-transforms';
 import { caluclatePlayerAverageSunProductionPerDay } from './player-ai-utils-common';
-import { normalizedLinear } from './utility-helpers';
 
 const calculatePlayerProjectedFinalScore = ({
     daysLeft,
@@ -24,50 +23,57 @@ const calculatePlayerProjectedFinalScore = ({
     });
 
     let playerProjectedFinalScore = playerScore;
-    let playerSunProducedTillEndOfGame = playerAverageSunProductionPerDay * daysLeft * 0.7;
+    let playerSunAtEndOfGame = playerAverageSunProductionPerDay * daysLeft;
     let currentNutrientsModifier = 0;
 
     Object.keys(playerTrees).forEach((treeKey) => {
         const tree = playerTrees[treeKey];
-        if (tree.size < 3) {
-            return;
+        if (tree.size === 0) {
+            if (daysLeft < 6) {
+                return;
+            }
+            playerSunAtEndOfGame = playerSunAtEndOfGame - (1 + 3 + 7);
         }
-        if (playerSunProducedTillEndOfGame < 4) {
-            return;
+        if (tree.size === 1) {
+            if (daysLeft < 5) {
+                return;
+            }
+            playerSunAtEndOfGame = playerSunAtEndOfGame - (3 + 7);
+        }
+        if (tree.size === 2) {
+            if (daysLeft < 4) {
+                return;
+            }
+            playerSunAtEndOfGame = playerSunAtEndOfGame - 7;
         }
         const treeCoordinates = keyToHexCoordinates(treeKey);
         const [q, r] = treeCoordinates;
         const richness = gameState.map.richnessMatrix[r][q] || 0;
-        playerProjectedFinalScore += gameState.nutrients + currentNutrientsModifier + richness;
+        if (richness === 1) {
+            playerProjectedFinalScore += 0;
+        }
+        if (richness === 2) {
+            playerProjectedFinalScore += 2;
+        }
+        if (richness === 3) {
+            playerProjectedFinalScore += 4;
+        }
+        playerProjectedFinalScore += gameState.nutrients + currentNutrientsModifier;
         currentNutrientsModifier -= 1;
-        playerSunProducedTillEndOfGame -= 4;
+        playerSunAtEndOfGame -= 4;
     });
 
-    playerProjectedFinalScore += playerSunProducedTillEndOfGame / 3;
+    playerProjectedFinalScore += playerSunAtEndOfGame / 3;
     return playerProjectedFinalScore;
 };
 
-export const calculateProjectedScoreUtility = (
-    newGameState: GameState,
-    shadowModifiersForWeek: ShadowModifiersForWeek
-): number => {
-    const daysLeft = MAX_NUM_OF_DAYS - newGameState.day;
-    const myProjectedFinalScore = calculatePlayerProjectedFinalScore({
-        daysLeft,
-        playerScore: newGameState.players.me.score,
-        playerTrees: newGameState.players.me.trees,
-        shadowModifiersForWeek,
-        gameState: newGameState,
-    });
-    const targetMaxScore = 260;
-    const myScore = myProjectedFinalScore > targetMaxScore ? targetMaxScore : myProjectedFinalScore;
-    return normalizedLinear({ value: myScore, max: targetMaxScore });
-};
-
-export const calculateRelativeProjectedScoreUtility = (
-    newGameState: GameState,
-    shadowModifiersForWeek: ShadowModifiersForWeek
-): number => {
+export const calculateRelativeProjectedScoreUtility = ({
+    newGameState,
+    shadowModifiersForWeek,
+}: {
+    newGameState: GameState;
+    shadowModifiersForWeek: ShadowModifiersForWeek;
+}): number => {
     const daysLeft = MAX_NUM_OF_DAYS - newGameState.day;
 
     const myProjectedFinalScore = calculatePlayerProjectedFinalScore({
@@ -85,7 +91,10 @@ export const calculateRelativeProjectedScoreUtility = (
         shadowModifiersForWeek,
         gameState: newGameState,
     });
-    // console.error(`${myProjectedFinalScore} - ${opponentProjectedFinalScore}`);
+
+    if (myProjectedFinalScore <= 0 || opponentProjectedFinalScore <= 0) {
+        return 0;
+    }
     const totalProjectedScoreBetweenPlayers = myProjectedFinalScore + opponentProjectedFinalScore;
 
     const utility =

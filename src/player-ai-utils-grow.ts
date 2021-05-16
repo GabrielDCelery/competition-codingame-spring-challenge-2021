@@ -47,7 +47,23 @@ export const calculateRelativeSunProducedForNextXDays = ({
     return utility;
 };
 
-export const preferGrowingTreesInRichSoil = ({ newGameState }: { newGameState: GameState }): number => {
+export const calculateRelativeSunProducedForHalfCycleUtility = ({
+    newGameState,
+}: {
+    newGameState: GameState;
+}): number => {
+    return calculateRelativeSunProducedForNextXDays({ newGameState, nextXDays: 3 });
+};
+
+export const calculateRelativeSunProducedForFullCycleUtility = ({
+    newGameState,
+}: {
+    newGameState: GameState;
+}): number => {
+    return calculateRelativeSunProducedForNextXDays({ newGameState, nextXDays: 6 });
+};
+
+export const calculatePreferGrowingTreesInRichSoilUtility = ({ newGameState }: { newGameState: GameState }): number => {
     let totalRichness = 0;
     let numOfTrees = 0;
 
@@ -65,4 +81,24 @@ export const preferGrowingTreesInRichSoil = ({ newGameState }: { newGameState: G
         0.5 *
         normalizedLinear({ value: averageRichness, max: 9 })
     );
+};
+
+export const calculateStopGrowingTreesAtTheEndUtility = ({ newGameState }: { newGameState: GameState }): number => {
+    const daysLeft = MAX_NUM_OF_DAYS - newGameState.day;
+
+    if (daysLeft >= 4) {
+        return 1;
+    }
+
+    const numOfSizeThreeTrees = Object.keys(newGameState.players.me.trees).filter((treeKey) => {
+        return newGameState.players.me.trees[treeKey].size === 3;
+    }).length;
+
+    if (newGameState.nutrients > 5 && numOfSizeThreeTrees > 0) {
+        return 0;
+    }
+
+    const mySun = newGameState.players.me.sun > 20 ? 20 : newGameState.players.me.sun;
+
+    return normalizedLinear({ value: mySun, max: 20 });
 };
