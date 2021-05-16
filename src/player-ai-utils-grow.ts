@@ -99,10 +99,8 @@ export const calculateStopGrowingTreesAtTheEndUtility = ({ newGameState }: { new
     }).length;
 
     if (newGameState.nutrients > 5 && numOfSizeThreeTrees > 0) {
-        return 0;
+        return 1;
     }
 
-    const mySun = newGameState.players.me.sun > 20 ? 20 : newGameState.players.me.sun;
-
-    return normalizedLinear({ value: mySun, max: 20 });
+    return -Infinity;
 };
