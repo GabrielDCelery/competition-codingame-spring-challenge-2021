@@ -11,7 +11,6 @@ import { calculateRelativeProjectedScoreUtility } from './player-ai-utils-harves
 import {
     calculateRelativeSunProducedForHalfCycleUtility,
     calculateRelativeSunProducedForFullCycleUtility,
-    calculatePreferGrowingTreesInRichSoilUtility,
     calculateStopGrowingTreesAtTheEndUtility,
 } from './player-ai-utils-grow';
 import {
@@ -69,7 +68,6 @@ export const getNextCommandAsGameInput = (oldGameState: GameState, possibleMoves
             const utilities = [
                 calculateRelativeSunProducedForHalfCycleUtility({ newGameState }),
                 calculateRelativeSunProducedForFullCycleUtility({ newGameState }),
-                //   calculatePreferGrowingTreesInRichSoilUtility({ newGameState }),
                 calculateStopGrowingTreesAtTheEndUtility({ newGameState }),
             ];
             const possibleMoveUtility = average(utilities);
