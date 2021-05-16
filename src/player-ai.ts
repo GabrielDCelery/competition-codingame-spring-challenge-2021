@@ -69,7 +69,7 @@ export const getNextCommandAsGameInput = (oldGameState: GameState, possibleMoves
             const utilities = [
                 calculateRelativeSunProducedForHalfCycleUtility({ newGameState }),
                 calculateRelativeSunProducedForFullCycleUtility({ newGameState }),
-                calculatePreferGrowingTreesInRichSoilUtility({ newGameState }),
+                //   calculatePreferGrowingTreesInRichSoilUtility({ newGameState }),
                 calculateStopGrowingTreesAtTheEndUtility({ newGameState }),
             ];
             const possibleMoveUtility = average(utilities);

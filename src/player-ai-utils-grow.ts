@@ -86,6 +86,10 @@ export const calculatePreferGrowingTreesInRichSoilUtility = ({ newGameState }: {
 export const calculateStopGrowingTreesAtTheEndUtility = ({ newGameState }: { newGameState: GameState }): number => {
     const daysLeft = MAX_NUM_OF_DAYS - newGameState.day;
 
+    if (newGameState.day === 23) {
+        return -Infinity;
+    }
+
     if (daysLeft >= 4) {
         return 1;
     }
