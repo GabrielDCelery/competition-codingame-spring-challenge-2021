@@ -33,7 +33,7 @@ const utility = average([
 	calculateRelativeSunProducedForHalfCycleUtility(newGameState),
 	calculateRelativeSunProducedForFullCycleUtility(newGameState),
 	calculateStopGrowingTreesAtTheEndUtility(newGameState),
-])
+]);
 ```
 
 **Example for seed:**
@@ -49,7 +49,7 @@ const utility = average([
 	calculateAvoidSpammingSeedsUtility(newGameState),
 	calculateAvoidCastingShadowsOnOwnTreesUtility(newGameState),
 	calculateSeedAreasWithRichSoilUtility(newGameState)
-])
+]);
 ```
 
 ### Hierarchical utility
