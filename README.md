@@ -5,6 +5,8 @@
 
 It was a great competition, many thanks to the admins and everyone involved in organising it.
 
+![Screenshot Spring Challenge 2021](./assets/screenshot-codningame-spring-2021.jpg)
+
 ### General Strategy
 
 Unlike most people who were using trees, neural networks and such I have used a hierarchical utility based approach.
@@ -19,10 +21,10 @@ There are lot of great pieces about the topic, but the gist of it is that you ha
 
 **So the order for a utility function is:**
 
--   Clone the current state
--   Apply the action (e.g. SEED 7) to the cloned state
--   Calculate a normalized utility between 0 and 1 of the modified state for each utility function
--   Average the results
+- Clone the current state
+- Apply the action (e.g. SEED 7) to the cloned state
+- Calculate a normalized utility between 0 and 1 of the modified state for each utility function
+- Average the results
 
 **Example for grow:**
 
@@ -63,15 +65,15 @@ As you can see the above examples are action specific, so in order to make this 
 [WAIT]
 ```
 
--   Check if completing a tree or waiting is better
--   If completing a tree is better than waiting do the action (exit)
--   If not move on to the next action set
--   Check if growing a tree or waiting is better
--   If growing a tree is better than waiting do the action (exit)
--   If not move on to the next action set
--   Check if seeding or waiting is better
--   If seeding is better than waiting do the action (exit)
--   If not then wait (exit)
+- Check if completing a tree or waiting is better
+- If completing a tree is better than waiting do the action (exit)
+- If not move on to the next action set
+- Check if growing a tree or waiting is better
+- If growing a tree is better than waiting do the action (exit)
+- If not move on to the next action set
+- Check if seeding or waiting is better
+- If seeding is better than waiting do the action (exit)
+- If not then wait (exit)
 
 ### Accounting for opponent actions
 
@@ -79,8 +81,8 @@ I did account for the locations and shadows being cast by the opponent's trees, 
 
 ### What I liked / did not like about the approach
 
--   Quick prototyping and relatively good results quickly
--   Enabling/disabling small utility functions made it easy to discard functions that weren't affecting the game much (or at all)
--   Sometimes it was difficult to wrap my head around the fact that a utility function was evaluating the state without the knowledge of which action changed the state (e.g. a utility function for grow didn't know which tree was grown). Maybe shouldn't have done it this way, but I wanted to stick to my choice
+- Quick prototyping and relatively good results quickly
+- Enabling/disabling small utility functions made it easy to discard functions that weren't affecting the game much (or at all)
+- Sometimes it was difficult to wrap my head around the fact that a utility function was evaluating the state without the knowledge of which action changed the state (e.g. a utility function for grow didn't know which tree was grown). Maybe shouldn't have done it this way, but I wanted to stick to my choice
 
 Thanks again, looking forward to the fall challenge. :)
