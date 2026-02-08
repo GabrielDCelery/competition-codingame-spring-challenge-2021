@@ -1,7 +1,7 @@
 ### CodinGame Spring Challenge 2021
 
-**Final rank: Top 4% (251st of 6,867)**
-**Language: Typescript (transpiled to JS)**
+- Final rank: **Top 4%** (251st of 6,867)
+- Language: Typescript (transpiled to JS)
 
 It was a great competition, many thanks to the admins and everyone involved in organising it.
 
