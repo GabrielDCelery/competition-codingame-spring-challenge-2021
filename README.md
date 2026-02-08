@@ -7,6 +7,8 @@ It was a great competition, many thanks to the admins and everyone involved in o
 
 ![Screenshot Spring Challenge 2021](./assets/screenshot-codningame-spring-2021.jpg)
 
+[Link to challenge](https://www.codingame.com/contests/spring-challenge-2021)
+
 ### General Strategy
 
 Unlike most people who were using trees, neural networks and such I have used a hierarchical utility based approach.
